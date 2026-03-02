@@ -2,77 +2,101 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Iniciar</title>
+<title>Sistema de Acesso</title>
 
 <style>
 body{
     background:black;
-    margin:0;
-    height:100vh;
     color:#00ff00;
     font-family:"Courier New", monospace;
-}
-
-#startScreen{
+    margin:0;
+    height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
-    height:100vh;
+    flex-direction:column;
+    text-align:center;
 }
 
-#conteudo{
-    display:none;
-}
-
-.texto{
-    position:fixed;
-    top:15px;
-    left:15px;
-}
-
-.botao{
+button{
     background:black;
     color:#00ff00;
-    border:3px solid #00ff00;
-    padding:20px 40px;
-    font-size:22px;
+    border:2px solid #00ff00;
+    padding:10px 20px;
     cursor:pointer;
+    margin-top:10px;
+}
+
+#adminPanel{
+    display:none;
+    margin-top:20px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="startScreen">
-    <button class="botao" onclick="iniciarSistema()">INICIAR</button>
-</div>
+<h2 id="mensagem">Verificando acesso...</h2>
+<button onclick="abrirAdmin()">Área ADM</button>
 
-<div id="conteudo">
-    <div class="texto">
-        estamos trabalhando em te direcionar...
-    </div>
-    <audio id="som" src="./som.mp3" preload="auto"></audio>
+<div id="adminPanel">
+    <p>Configuração de horário (apenas admin)</p>
 </div>
 
 <script>
-function iniciarSistema(){
 
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("conteudo").style.display = "block";
+// CONFIG PADRÃO
+let config = {
+    dia: 1,          // Segunda
+    horaInicio: 19,
+    minInicio: 0,
+    horaFim: 20,
+    minFim: 40
+};
 
-    const audio = document.getElementById("som");
+// HASH SHA-256 da senha 101205
+const senhaHash = "f2f1c0e8d6bb0e8e4e5a6eaa8e2b7b3d91b8a87b84d888fffbe671c5f3cf1916";
 
-    audio.play().then(() => {
-        // Depois que começar a tocar, pula para 10s
-        setTimeout(() => {
-            audio.currentTime = 10;
-        }, 200);
-    });
-
-    setTimeout(function(){
-        window.location.href = "https://meet.google.com/tcv-yzuj-tum";
-    }, 5000);
+// FUNÇÃO PARA GERAR SHA-256
+async function hashSenha(texto){
+    const encoder = new TextEncoder();
+    const data = encoder.encode(texto);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+function verificarAcesso(){
+
+    const agora = new Date();
+    const diaAtual = agora.getDay();
+    const minutosAgora = agora.getHours()*60 + agora.getMinutes();
+    const minutosInicio = config.horaInicio*60 + config.minInicio;
+    const minutosFim = config.horaFim*60 + config.minFim;
+
+    if(diaAtual === config.dia && minutosAgora >= minutosInicio && minutosAgora <= minutosFim){
+        window.location.href = "https://meet.google.com/tcv-yzuj-tum";
+    } else {
+        document.getElementById("mensagem").innerText =
+        "Acesso permitido somente segunda-feira das 19:00 às 20:40";
+    }
+}
+
+async function abrirAdmin(){
+    const senha = prompt("Senha ADM:");
+
+    const hashDigitado = await hashSenha(senha);
+
+    if(hashDigitado === senhaHash){
+        document.getElementById("adminPanel").style.display = "block";
+        alert("Acesso admin liberado");
+    } else {
+        alert("Senha incorreta");
+    }
+}
+
+verificarAcesso();
+
 </script>
 
 </body>
