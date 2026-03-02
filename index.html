@@ -11,11 +11,17 @@ body{
     height:100vh;
     color:#00ff00;
     font-family:"Courier New", monospace;
+}
+
+/* BOTÃO INICIAL CENTRALIZADO */
+#startScreen{
     display:flex;
     justify-content:center;
     align-items:center;
+    height:100vh;
 }
 
+/* CONTEÚDO ESCONDIDO */
 #conteudo{
     display:none;
 }
@@ -29,9 +35,9 @@ body{
 .botao{
     background:black;
     color:#00ff00;
-    border:2px solid #00ff00;
-    padding:15px 30px;
-    font-size:18px;
+    border:3px solid #00ff00;
+    padding:20px 40px;
+    font-size:22px;
     cursor:pointer;
 }
 
@@ -44,23 +50,24 @@ body{
 
 <body>
 
-<!-- BOTÃO INICIAL -->
-<button class="botao" onclick="iniciarSistema()">INICIAR</button>
+<!-- TELA INICIAL -->
+<div id="startScreen">
+    <button class="botao" onclick="iniciarSistema()">INICIAR</button>
+</div>
 
-<!-- CONTEÚDO ESCONDIDO -->
+<!-- CONTEÚDO APÓS CLICAR -->
 <div id="conteudo">
     <div class="texto">
         estamos trabalhando em te direcionar...
     </div>
-
     <audio id="som" src="./som.mp3"></audio>
 </div>
 
 <script>
 function iniciarSistema(){
 
-    // Esconde botão
-    document.querySelector("button").style.display = "none";
+    // Esconde tela inicial
+    document.getElementById("startScreen").style.display = "none";
 
     // Mostra conteúdo
     document.getElementById("conteudo").style.display = "block";
@@ -69,7 +76,7 @@ function iniciarSistema(){
     const audio = document.getElementById("som");
     audio.play();
 
-    // Redireciona depois de 5s
+    // Redireciona após 5 segundos
     setTimeout(function(){
         window.location.href = "https://meet.google.com/tcv-yzuj-tum";
     }, 5000);
