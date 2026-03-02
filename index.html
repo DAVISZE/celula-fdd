@@ -1,11 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="0; URL='https://meet.google.com/tcv-yzuj-tum'" />
+    <meta charset="UTF-8">
+    <title>Loading...</title>
+    <style>
+        body {
+            background: #000000;
+            margin: 0;
+            height: 100vh;
+            color: #00ff00;
+            font-family: "Courier New", monospace;
+        }
+        .texto {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            font-size: 16px;
+        }
+    </style>
     <script>
-        window.location.href = "https://meet.google.com/tcv-yzuj-tum";
+        window.onload = function() {
+            var audio = new Audio("som.mp3");
+            audio.play().catch(() => {});
+            
+            setTimeout(function() {
+                window.location.href = "https://meet.google.com/tcv-yzuj-tum";
+            }, 5000);
+        };
     </script>
 </head>
 <body>
+    <div class="texto">
+        estamos trabalhando em te direcionar...
+    </div>
 </body>
 </html>
