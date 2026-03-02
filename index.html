@@ -12,11 +12,13 @@ body{
     color:#00ff00;
     font-family:"Courier New", monospace;
 }
+
 .texto{
     position:fixed;
     top:15px;
     left:15px;
 }
+
 .botao{
     position:absolute;
     top:50%;
@@ -29,6 +31,7 @@ body{
     font-size:18px;
     cursor:pointer;
 }
+
 .botao:hover{
     background:#00ff00;
     color:black;
@@ -44,23 +47,17 @@ body{
 
 <button class="botao" onclick="iniciar()">REDIRECIONAR</button>
 
-<audio id="som" preload="auto">
-    <source src="som.mp4" type="audio/mp4">
-    <source src="som.mp3" type="audio/mpeg">
-</audio>
+<audio id="som" src="./som.mp3" preload="auto"></audio>
 
 <script>
 function iniciar(){
     const audio = document.getElementById("som");
     audio.currentTime = 0;
-    audio.play().then(()=>{
-        setTimeout(()=>{
-            window.location.href = "https://meet.google.com/tcv-yzuj-tum";
-        },5000);
-    }).catch((e)=>{
-        alert("Erro ao tocar o som 😅");
-        console.log(e);
-    });
+    audio.play();
+
+    setTimeout(function(){
+        window.location.href = "https://meet.google.com/tcv-yzuj-tum";
+    }, 5000);
 }
 </script>
 
