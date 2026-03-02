@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Loading...</title>
+<title>Iniciar</title>
 
 <style>
 body{
@@ -11,6 +11,13 @@ body{
     height:100vh;
     color:#00ff00;
     font-family:"Courier New", monospace;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#conteudo{
+    display:none;
 }
 
 .texto{
@@ -20,10 +27,6 @@ body{
 }
 
 .botao{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
     background:black;
     color:#00ff00;
     border:2px solid #00ff00;
@@ -41,20 +44,32 @@ body{
 
 <body>
 
-<div class="texto">
-    estamos trabalhando em te direcionar...
+<!-- BOTÃO INICIAL -->
+<button class="botao" onclick="iniciarSistema()">INICIAR</button>
+
+<!-- CONTEÚDO ESCONDIDO -->
+<div id="conteudo">
+    <div class="texto">
+        estamos trabalhando em te direcionar...
+    </div>
+
+    <audio id="som" src="./som.mp3"></audio>
 </div>
 
-<button class="botao" onclick="iniciar()">REDIRECIONAR</button>
-
-<audio id="som" src="./som.mp3" preload="auto"></audio>
-
 <script>
-function iniciar(){
+function iniciarSistema(){
+
+    // Esconde botão
+    document.querySelector("button").style.display = "none";
+
+    // Mostra conteúdo
+    document.getElementById("conteudo").style.display = "block";
+
+    // Toca som
     const audio = document.getElementById("som");
-    audio.currentTime = 0;
     audio.play();
 
+    // Redireciona depois de 5s
     setTimeout(function(){
         window.location.href = "https://meet.google.com/tcv-yzuj-tum";
     }, 5000);
