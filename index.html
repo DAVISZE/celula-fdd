@@ -38,11 +38,6 @@ body{
     font-size:22px;
     cursor:pointer;
 }
-
-.botao:hover{
-    background:#00ff00;
-    color:black;
-}
 </style>
 </head>
 
@@ -56,7 +51,7 @@ body{
     <div class="texto">
         estamos trabalhando em te direcionar...
     </div>
-    <audio id="som" src="./som.mp3"></audio>
+    <audio id="som" src="./som.mp3" preload="auto"></audio>
 </div>
 
 <script>
@@ -67,13 +62,14 @@ function iniciarSistema(){
 
     const audio = document.getElementById("som");
 
-    // Espera carregar o áudio para poder pular para 10s
-    audio.addEventListener("loadedmetadata", function() {
-        audio.currentTime = 10; // COMEÇA NO SEGUNDO 10
+    audio.addEventListener("canplay", function() {
+        audio.currentTime = 10; // começa no segundo 10
         audio.play();
-    });
+    }, { once: true });
 
-    // Redireciona após 5 segundos
+    // força carregar
+    audio.load();
+
     setTimeout(function(){
         window.location.href = "https://meet.google.com/tcv-yzuj-tum";
     }, 5000);
