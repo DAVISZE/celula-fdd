@@ -13,7 +13,6 @@ body{
     font-family:"Courier New", monospace;
 }
 
-/* BOTÃO INICIAL CENTRALIZADO */
 #startScreen{
     display:flex;
     justify-content:center;
@@ -21,7 +20,6 @@ body{
     height:100vh;
 }
 
-/* CONTEÚDO ESCONDIDO */
 #conteudo{
     display:none;
 }
@@ -50,12 +48,10 @@ body{
 
 <body>
 
-<!-- TELA INICIAL -->
 <div id="startScreen">
     <button class="botao" onclick="iniciarSistema()">INICIAR</button>
 </div>
 
-<!-- CONTEÚDO APÓS CLICAR -->
 <div id="conteudo">
     <div class="texto">
         estamos trabalhando em te direcionar...
@@ -66,15 +62,16 @@ body{
 <script>
 function iniciarSistema(){
 
-    // Esconde tela inicial
     document.getElementById("startScreen").style.display = "none";
-
-    // Mostra conteúdo
     document.getElementById("conteudo").style.display = "block";
 
-    // Toca som
     const audio = document.getElementById("som");
-    audio.play();
+
+    // Espera carregar o áudio para poder pular para 10s
+    audio.addEventListener("loadedmetadata", function() {
+        audio.currentTime = 10; // COMEÇA NO SEGUNDO 10
+        audio.play();
+    });
 
     // Redireciona após 5 segundos
     setTimeout(function(){
