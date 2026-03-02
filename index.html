@@ -62,13 +62,12 @@ function iniciarSistema(){
 
     const audio = document.getElementById("som");
 
-    audio.addEventListener("canplay", function() {
-        audio.currentTime = 10; // começa no segundo 10
-        audio.play();
-    }, { once: true });
-
-    // força carregar
-    audio.load();
+    audio.play().then(() => {
+        // Depois que começar a tocar, pula para 10s
+        setTimeout(() => {
+            audio.currentTime = 10;
+        }, 200);
+    });
 
     setTimeout(function(){
         window.location.href = "https://meet.google.com/tcv-yzuj-tum";
