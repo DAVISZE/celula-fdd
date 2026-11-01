@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>London Transit Explorer</title>
+<style>
+:root {
+  --navy:#101b36;
+  --blue:#2457c5;
+  --bg:#f2f4f8;
+  --ink:#172033;
+  --muted:#66718a;
+  --green:#16804b;
+  --red:#bd3434;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#eef2f8;color:var(--ink);font:15px/1.45 Arial,sans-serif}
+header{background:linear-gradient(135deg,#101b36,#203d78);color:white;padding:26px 18px;text-align:center;box-shadow:0 4px 18px #101b3622}
+header h1{margin:0 0 6px;font-size:clamp(23px,5vw,32px)}
+header p{margin:0;color:#dce6ff}
+main{max-width:1120px;margin:22px auto;padding:0 14px}
+h2{margin:0 0 12px}
+h3{margin:20px 0 9px}
+.panel{box-shadow:0 5px 18px #1720330b;border:1px solid #e7ebf2}
+.tabs{position:sticky;top:0;z-index:3;background:#eef2f8;padding:8px 0}
+.tabs button{min-height:48px}
+.panel.detail{border-top:4px solid var(--blue)}
+.tabs,.subtabs{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:12px 15px;font-weight:bold;cursor:pointer}
+.tabs button{flex:1;background:#dce2ed;font-size:16px}
+.tabs button.active{background:var(--blue);color:white}
+.panel{background:white;border-radius:15px;padding:18px;margin-bottom:14px}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+input,select{padding:12px;border:1px solid #cbd3e0;border-radius:9px;font-size:15px;flex:1;min-width:150px}
+.btn{background:#e9eef8;color:#24427d}
+.primary{background:var(--blue);color:white}
+.stats,.note{font-size:13px;color:var(--muted);margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.card{border:1px solid #e1e6ef;border-radius:12px;padding:13px;display:flex;gap:10px;align-items:center}
+.dot{width:13px;height:13px;border-radius:50%;flex:none}
+.cardinfo{flex:1;min-width:0}
+.cardinfo strong{display:block;overflow-wrap:anywhere}
+.small{font-size:12px;color:var(--muted);margin-top:4px}
+.state{font-size:12px;font-weight:bold;margin-top:6px}
+.good{color:var(--green)}
+.bad{color:var(--red)}
+.unknown{color:#986500}
+.card button{padding:8px;background:#edf1f7}
+.card button.done{background:#e0f4e8;color:#17653b}
+.detail{display:none}
+.detail.open{display:block}
+.subtabs button{background:#e6ebf4}
+.subtabs button.active{background:#263d70;color:white}
+.hidden{display:none!important}
+.stoplist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px}
+.stop{padding:9px;border:1px solid #e1e6ef;border-radius:8px;display:flex;gap:8px;align-items:center}
+.stop button{margin-left:auto;background:#eaf0fb;color:#24427d}
+.arrival{padding:9px;border-bottom:1px solid #e1e6ef;font-size:13px}
+.line-summary{background:#f5f7fb;border:1px solid #e1e6ef;border-radius:10px;padding:12px;margin:10px 0}
+.line-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #dce3ee;background:#fff;border-radius:20px;padding:5px 9px;margin:3px;font-size:12px;font-weight:bold}
+.line-chip .dot{width:9px;height:9px}
+.station-extra{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.stop{align-items:flex-start;flex-direction:column;background:#fff;box-shadow:0 2px 8px #17203308}
+.stop-main{width:100%;min-width:0}
+.stop-main strong{display:block;font-size:14px}
+.stop-actions{display:flex;flex-direction:row;gap:5px;width:100%}
+.stop-actions button{flex:1}
+.arrival-live{width:100%;margin-top:8px;padding:9px 10px;border-radius:9px;background:#f0f6ff;border:1px solid #dce8fb}
+.arrival-live-title{font-size:11px;font-weight:bold;color:#435779;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.arrival-live-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px solid #dfe8f5;font-size:12px}
+.arrival-live-row:first-of-type{border-top:0}
+.arrival-live-time{font-weight:bold;color:#17653b;white-space:nowrap}
+.arrival-live-empty{font-size:12px;color:var(--muted)}
+.section-intro{color:var(--muted);font-size:13px;margin:-3px 0 13px}
+.live-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0}
+.live-indicator{font-size:12px;color:var(--muted)}
+.live-indicator:before{content:'●';color:#16804b;margin-right:6px}
+.stoplist{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+@media(max-width:550px){header{padding:20px 12px}main{margin:12px auto}.tabs{gap:6px}.tabs button{font-size:14px;padding:10px 8px}.stoplist{grid-template-columns:1fr}}
+.journey-option{border:1px solid #dce3ee;border-radius:12px;padding:13px;margin:12px 0;background:#fff}
+.journey-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.journey-total{font-size:18px;font-weight:bold;color:#18366f}
+.journey-leg{border-left:4px solid #b9c5d8;margin:12px 0 12px 5px;padding:3px 0 5px 12px}
+.journey-leg strong{display:block}
+.journey-leg p{margin:5px 0;font-size:13px;line-height:1.45}
+.journey-leg.walk{border-left-style:dashed;border-left-color:#8b96a8}
+.journey-leg.transit{border-left-color:#2457c5}
+.journey-meta{font-size:12px;color:var(--muted);margin-top:5px}
+.journey-stops{background:#f5f7fb;border-radius:8px;padding:9px;margin-top:7px;font-size:12px;line-height:1.6}
+.connection-title{font-size:12px;font-weight:bold;color:#45516a;margin-top:7px}
+.progress{height:9px;background:#e7ebf2;border-radius:10px;overflow:hidden}
+.progress span{display:block;height:100%;background:#2b9b62;width:0}
+.modalback{position:fixed;inset:0;background:#08132999;display:none;align-items:center;justify-content:center;padding:14px;z-index:5}
+.modalback.show{display:flex}
+.modal{background:white;border-radius:15px;max-width:650px;width:100%;max-height:85vh;overflow:auto;padding:18px}
+.footer{text-align:center;font-size:12px;color:var(--muted);padding:12px}
+@media(max-width:550px){.panel{padding:13px}.row>*{min-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🚇 London Transit Explorer</h1>
+<p>Guia de metrô e ônibus de Londres</p>
+</header>
+
+<main>
+
+<div class="tabs">
+<button id="tubeTab" class="active" onclick="setMode('tube')">🚇 METRÔ</button>
+<button id="busTab" onclick="setMode('bus')">🚌 ÔNIBUS</button>
+</div>
+
+<section class="panel">
+<h2>Linhas de transporte</h2>
+<p class="section-intro">Escolha uma linha para ver o percurso, as estações, conexões, alertas e chegadas em tempo real.</p>
+<div class="row">
+<input id="search" placeholder="Pesquisar linha (ex.: Central ou 39)" oninput="renderLines()">
+<button class="btn" onclick="loadNetwork()">↻ Atualizar</button>
+</div>
+<div class="stats" id="networkStatus">Carregando...</div>
+<div class="grid" id="lineList"></div>
+</section>
+
+<section class="panel detail" id="detail">
+<div class="row">
+<div>
+<h2 id="detailTitle">Detalhes</h2>
+<div id="detailMeta"></div>
+</div>
+<button onclick="closeDetail()">Fechar ✕</button>
+</div>
+
+<div id="detailStatus" class="note"></div>
+
+<div class="subtabs">
+<button class="active" data-view="overview" onclick="showDetailTab('overview')">Visão geral</button>
+<button data-view="stops" onclick="showDetailTab('stops')">Estações / paradas</button>
+<button data-view="disruptions" onclick="showDetailTab('disruptions')">Alertas</button>
+</div>
+
+<div id="view-overview">
+<h3>Trajetos e direções</h3>
+<div id="branches" class="note">Carregando...</div>
+<h3>Informações da linha</h3>
+<div id="overviewInfo" class="note"></div>
+<h3>Estações e conexões</h3>
+<div id="lineConnections" class="line-summary">As conexões serão carregadas junto com as estações.</div>
+</div>
+
+<div id="view-stops" class="hidden">
+<div class="row">
+<select id="direction" onchange="loadSequence()">
+<option value="outbound">Ida</option>
+<option value="inbound">Volta</option>
+</select>
+<button class="btn" onclick="loadSequence()">Carregar paradas</button>
+</div>
+<div class="live-toolbar">
+<div>
+<strong>🚆 Próximas chegadas em cada estação</strong>
+<div class="live-indicator" id="liveStatus">Previsões em tempo real da TfL</div>
+</div>
+<button class="btn" onclick="refreshAllStationArrivals()">↻ Atualizar chegadas</button>
+</div>
+<p class="section-intro">Mostra os próximos trens desta linha em cada estação. Para ônibus, mostra as próximas chegadas dessa rota em cada parada.</p>
+<div id="stops" class="stoplist"></div>
+</div>
+
+<div id="view-disruptions" class="hidden">
+<div id="disruptions"></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>🧭 Planejar uma viagem</h2>
+<p class="note">Pesquise origem e destino para ver cada etapa, linha utilizada, caminhada, trocas e estações intermediárias. Digite o nome de uma estação, parada ou endereço.</p>
+<div class="row">
+<input id="from" placeholder="De onde? Ex.: King's Cross">
+<input id="to" placeholder="Para onde? Ex.: Oxford Circus">
+<button class="btn primary" onclick="planJourney()">Encontrar trajeto</button>
+</div>
+<div id="journeyResult" class="note"></div>
+</section>
+
+<section class="panel">
+<h2>🏅 Meu histórico</h2>
+<div class="stats" id="progressText"></div>
+<div class="progress"><span id="progressBar"></span></div>
+<p class="note">Marque as linhas que você já utilizou.</p>
+<div class="row">
+<button class="btn primary" onclick="exportLon()">Exportar .LON</button>
+<button class="btn" onclick="document.getElementById('importFile').click()">Importar .LON</button>
+<input id="importFile" type="file" accept=".lon,.json" hidden onchange="importLon(event)">
+</div>
+<div id="historyInfo" class="stats"></div>
+</section>
+
+<div class="footer">
+Dados fornecidos pela Transport for London (TfL).
+Aplicação independente, não oficial.
+</div>
+</main>
+
+<div class="modalback" id="arrivalModal" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+<div class="row">
+<h2 id="arrivalTitle">Próximas chegadas</h2>
+<button onclick="closeModal()">Fechar ✕</button>
+</div>
+<div id="arrivalContent"></div>
+</div>
+</div>
+
+<script>
+const API='https://api.tfl.gov.uk';
+
+const colors={
+bakerloo:'#B36305',
+central:'#E32017',
+circle:'#FFD300',
+district:'#00782A',
+'hammersmith-city':'#F3A9BB',
+jubilee:'#A0A5A9',
+metropolitan:'#9B0056',
+northern:'#000',
+piccadilly:'#003688',
+victoria:'#0098D4',
+'waterloo-city':'#95CDBA'
+};
+
+let mode='tube';
+let lines=[];
+let statuses={};
+let history=readHistory();
+let selected=null;
+let updatedAt=null;
+
+const $=id=>document.getElementById(id);
+
+async function api(path){
+const r=await fetch(API+path);
+if(!r.ok)throw new Error('Erro TfL '+r.status);
+return r.json();
+}
+
+function lineColor(id){
+return colors[String(id||'').toLowerCase()]||'#2457c5';
+}
+
+function addLineChip(parent,lineName,lineId,transportMode){
+const chip=document.createElement('span');
+chip.className='line-chip';
+const dot=document.createElement('span');
+dot.className='dot';
+dot.style.background=lineColor(lineId);
+const label=document.createElement('span');
+label.textContent=(lineName||lineId||'Linha')+(transportMode==='bus'?' (ônibus)':'');
+chip.append(dot,label);
+parent.append(chip);
+}
+
+const interchangeCache=new Map();
+let currentStops=[];
+let arrivalRefreshTimer=null;
+let refreshingArrivals=false;
+let sequenceToken=0;
+
+function stopArrivalTimer(){
+ if(arrivalRefreshTimer){clearInterval(arrivalRefreshTimer);arrivalRefreshTimer=null;}
+}
+
+function arrivalMinutes(seconds){
+ if(seconds<=25)return 'Chegando';
+ return Math.ceil(seconds/60)+' min';
+}
+
+async function getLiveArrivals(stop){
+ try{
+  const arrivals=await api('/StopPoint/'+encodeURIComponent(stop.id)+'/Arrivals');
+  const lineId=String(selected&&selected.id||'').toLowerCase();
+  return arrivals.filter(a=>
+   String(a.lineId||'').toLowerCase()===lineId ||
+   String(a.lineName||'').toLowerCase()===lineId
+  ).sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0)).slice(0,3);
+ }catch(e){return null;}
+}
+
+async function renderStopArrivals(stop,box){
+ const arrivals=await getLiveArrivals(stop);
+ if(!box.isConnected)return;
+ box.innerHTML='';
+ const title=document.createElement('div');
+ title.className='arrival-live-title';
+ title.textContent='Próximas chegadas • '+(mode==='tube'?'esta linha':'esta rota');
+ box.append(title);
+ if(arrivals===null){
+  const empty=document.createElement('div');empty.className='arrival-live-empty';
+  empty.textContent='Previsão temporariamente indisponível.';box.append(empty);return;
+ }
+ if(!arrivals.length){
+  const empty=document.createElement('div');empty.className='arrival-live-empty';
+  empty.textContent='Nenhuma chegada prevista desta linha neste momento.';box.append(empty);return;
+ }
+ arrivals.forEach(a=>{
+  const row=document.createElement('div');row.className='arrival-live-row';
+  const destination=document.createElement('span');
+  destination.textContent=(a.destinationName||a.towards||'Destino não informado')+(a.platformName?' • '+a.platformName:'');
+  const time=document.createElement('span');time.className='arrival-live-time';
+  time.textContent=arrivalMinutes(a.timeToStation||0);
+  row.append(destination,time);box.append(row);
+ });
+}
+
+async function refreshAllStationArrivals(){
+ if(!selected||!currentStops.length||refreshingArrivals)return;
+ refreshingArrivals=true;
+ const selectedId=selected.id;
+ $('liveStatus').textContent='Atualizando previsões...';
+ try{
+  for(let i=0;i<currentStops.length;i+=5){
+   if(!selected||selected.id!==selectedId)break;
+   await Promise.all(currentStops.slice(i,i+5).map(x=>renderStopArrivals(x.stop,x.box)));
+  }
+  if(selected&&selected.id===selectedId){
+   $('liveStatus').textContent='Atualizado às '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})+' • atualização automática a cada 45 segundos';
+  }
+ }finally{refreshingArrivals=false;}
+}
+
+async function getStopConnections(stop){
+if(!stop||!stop.id)return [];
+if(stop.lines&&stop.lines.length)return stop.lines;
+if(interchangeCache.has(stop.id))return interchangeCache.get(stop.id);
+const pending=api('/StopPoint/'+encodeURIComponent(stop.id))
+.then(data=>data.lines||[])
+.catch(()=>[]);
+interchangeCache.set(stop.id,pending);
+return pending;
+}
+
+function readHistory(){
+try{
+return JSON.parse(localStorage.getItem('londonTransitHistory')||'{}');
+}catch{
+return {};
+}
+}
+
+function saveHistory(){
+localStorage.setItem('londonTransitHistory',JSON.stringify(history));
+updateProgress();
+}
+
+function setMode(m){
+mode=m;
+selected=null;
+$('tubeTab').classList.toggle('active',m==='tube');
+$('busTab').classList.toggle('active',m==='bus');
+$('search').value='';
+$('detail').classList.remove('open');
+loadNetwork();
+}
+
+async function loadNetwork(){
+$('networkStatus').textContent='Carregando linhas e situação atual...';
+$('lineList').innerHTML='';
+
+try{
+const [l,s]=await Promise.all([
+api('/Line/Mode/'+mode),
+api('/Line/Mode/'+mode+'/Status')
+]);
+
+lines=l;
+statuses={};
+
+s.forEach(x=>statuses[x.id]=x.lineStatuses||[]);
+
+updatedAt=new Date();
+renderLines();
+
+$('networkStatus').textContent=
+lines.length+' linhas carregadas • Atualizado às '+updatedAt.toLocaleTimeString();
+
+}catch(e){
+$('networkStatus').textContent=
+'Não foi possível consultar a TfL. Verifique a internet.';
+}
+}
+
+function statusText(id){
+const arr=statuses[id]||[];
+if(!arr.length)return 'Estado não informado';
+return arr.map(x=>x.statusSeverityDescription||'Estado não informado').join(' · ');
+}
+
+function severityClass(id){
+const arr=statuses[id]||[];
+if(!arr.length)return 'unknown';
+return arr.every(x=>x.statusSeverity===10)?'good':'bad';
+}
+
+function renderLines(){
+const q=$('search').value.toLowerCase().trim();
+const root=$('lineList');
+root.innerHTML='';
+
+const found=lines.filter(x=>
+(x.name+' '+x.id).toLowerCase().includes(q)
+);
+
+found.forEach(line=>{
+const card=document.createElement('div');
+card.className='card';
+
+const dot=document.createElement('span');
+dot.className='dot';
+dot.style.background=mode==='tube'?(colors[line.id]||'#2457c5'):'#2457c5';
+
+const info=document.createElement('div');
+info.className='cardinfo';
+
+const name=document.createElement('strong');
+name.textContent=line.name;
+
+const code=document.createElement('div');
+code.className='small';
+code.textContent='Código: '+line.id;
+
+const st=document.createElement('div');
+st.className='state '+severityClass(line.id);
+st.textContent='● '+statusText(line.id);
+
+info.append(name,code,st);
+
+const open=document.createElement('button');
+open.textContent='Detalhes';
+open.onclick=()=>openLine(line);
+
+const done=document.createElement('button');
+done.className=history[mode+':'+line.id]?'done':'';
+done.textContent=history[mode+':'+line.id]?'✓ Já usei':'+ Já usei';
+done.onclick=()=>toggleHistory(line);
+
+card.append(dot,info,done,open);
+root.append(card);
+});
+
+if(!found.length){
+root.innerHTML='<div>Nenhuma linha encontrada.</div>';
+}
+
+updateProgress();
+}
+
+function toggleHistory(line){
+const k=mode+':'+line.id;
+
+if(history[k])delete history[k];
+else history[k]={
+name:line.name,
+mode:mode,
+markedAt:new Date().toISOString()
+};
+
+saveHistory();
+renderLines();
+}
+
+function updateProgress(){
+const count=Object.keys(history).length;
+
+$('progressText').textContent=
+count+' linha(s)/rota(s) marcadas no seu histórico';
+
+$('progressBar').style.width=
+Math.min(100,count/Math.max(lines.length,1)*100)+'%';
+
+$('historyInfo').textContent=
+Object.values(history).map(x=>x.name+' ('+x.mode+')').join(' • ')
+||'Você ainda não marcou nenhuma linha.';
+}
+
+async function openLine(line){
+stopArrivalTimer();
+currentStops=[];
+sequenceToken++;
+selected=line;
+$('detail').classList.add('open');
+$('detailTitle').textContent=line.name;
+$('detailMeta').textContent=
+(mode==='tube'?'London Underground':'London bus')+' • '+line.id;
+
+$('detailStatus').textContent='Situação: '+statusText(line.id);
+$('branches').textContent='Buscando trajetos...';
+$('overviewInfo').textContent='Carregando...';
+$('lineConnections').textContent='Carregando estações e conexões...';
+$('stops').innerHTML='';
+$('disruptions').textContent='Buscando alertas...';
+
+showDetailTab('overview');
+$('detail').scrollIntoView({behavior:'smooth'});
+
+try{
+const [routes,dis]=await Promise.all([
+api('/Line/'+encodeURIComponent(line.id)+'/Route'),
+api('/Line/'+encodeURIComponent(line.id)+'/Disruption')
+]);
+
+$('branches').innerHTML='';
+
+if(routes.length){
+routes.forEach(r=>{
+const p=document.createElement('p');
+p.textContent=(r.routeSections||[])
+.map(x=>x.origin+' → '+x.destination)
+.filter(Boolean).join(' | ')||'Trajeto disponível na TfL';
+$('branches').append(p);
+});
+}else{
+$('branches').textContent='Trajetos não disponíveis.';
+}
+
+$('overviewInfo').textContent=
+'Nome: '+line.name+
+'. Identificador TfL: '+line.id+
+'. Situação atual: '+statusText(line.id)+
+'. A lista de estações/paradas e as conexões com outros serviços aparece na aba correspondente.';
+
+$('disruptions').innerHTML='';
+
+if(dis.length){
+dis.forEach(d=>{
+const box=document.createElement('div');
+box.className='arrival';
+box.textContent=(d.category||'Aviso')+': '+
+(d.description||d.additionalInfo||d.comments||'Detalhes não fornecidos');
+$('disruptions').append(box);
+});
+}else{
+$('disruptions').textContent='Nenhum alerta específico retornado.';
+}
+
+}catch(e){
+$('branches').textContent='Detalhes indisponíveis no momento.';
+$('disruptions').textContent='Alertas indisponíveis.';
+}
+
+loadSequence();
+}
+
+function showDetailTab(tab){
+document.querySelectorAll('.subtabs button').forEach(b=>
+b.classList.toggle('active',b.dataset.view===tab)
+);
+
+['overview','stops','disruptions'].forEach(x=>
+$('view-'+x).classList.toggle('hidden',x!==tab)
+);
+}
+
+function closeDetail(){
+$('detail').classList.remove('open');
+selected=null;
+currentStops=[];
+stopArrivalTimer();
+}
+
+async function loadSequence(){
+if(!selected)return;
+
+const dir=$('direction').value;
+sequenceToken++;
+stopArrivalTimer();
+currentStops=[];
+$('liveStatus').textContent='Carregando estações e previsões...';
+$('stops').textContent='Carregando paradas...';
+
+try{
+const data=await api(
+'/Line/'+encodeURIComponent(selected.id)+'/Route/Sequence/'+dir
+);
+
+const root=$('stops');
+root.innerHTML='';
+
+let stops=[];
+(data.stopPointSequences||[]).forEach(seq=>
+(seq.stopPoint||[]).forEach(s=>stops.push(s))
+);
+
+const seen=new Set();
+stops=stops.filter(s=>{
+if(seen.has(s.id))return false;
+seen.add(s.id);
+return true;
+});
+
+if(!stops.length){
+root.textContent='Paradas não disponíveis.';
+$('lineConnections').textContent='A TfL não retornou estações/paradas para esta linha.';
+return;
+}
+
+$('lineConnections').textContent='Analisando '+stops.length+' estações/paradas e os serviços que passam por elas...';
+Promise.all(stops.map(getStopConnections)).then(all=>{
+const unique=new Map();
+all.flat().forEach(x=>{if(x.id)unique.set(x.id,x);});
+const box=$('lineConnections');
+box.innerHTML='';
+const summary=document.createElement('p');
+summary.textContent=stops.length+' paradas/estações nesta sequência. '+unique.size+' linhas/serviços diferentes encontrados nas conexões retornadas pela TfL.';
+box.append(summary);
+const chips=document.createElement('div');
+unique.forEach(x=>addLineChip(chips,x.name,x.id,x.mode));
+box.append(chips);
+});
+
+stops.forEach((s,i)=>{
+const el=document.createElement('div');
+el.className='stop';
+
+const main=document.createElement('div');
+main.className='stop-main';
+const label=document.createElement('strong');
+label.textContent=(i+1)+'. '+s.name;
+const extra=document.createElement('div');
+extra.className='station-extra';
+extra.textContent='Consultando conexões...';
+main.append(label,extra);
+
+const liveBox=document.createElement('div');
+liveBox.className='arrival-live';
+liveBox.innerHTML='<div class="arrival-live-title">Carregando previsões...</div>';
+
+const actions=document.createElement('div');
+actions.className='stop-actions';
+const btn=document.createElement('button');
+btn.textContent='Chegadas';
+btn.onclick=()=>showArrivals(s);
+actions.append(btn);
+
+el.append(main,liveBox,actions);
+root.append(el);
+currentStops.push({stop:s,box:liveBox});
+
+getStopConnections(s).then(connections=>{
+extra.innerHTML='';
+if(!connections.length){
+extra.textContent='Conexões não informadas pela TfL.';
+return;
+}
+const title=document.createElement('div');
+title.className='connection-title';
+title.textContent='Conexões / linhas que atendem esta parada:';
+extra.append(title);
+const chips=document.createElement('div');
+connections.forEach(c=>addLineChip(chips,c.name,c.id,c.mode));
+extra.append(chips);
+});
+});
+
+const thisSequence=sequenceToken;
+await refreshAllStationArrivals();
+if(selected&&thisSequence===sequenceToken){
+ stopArrivalTimer();
+ arrivalRefreshTimer=setInterval(refreshAllStationArrivals,45000);
+}
+
+
+}catch(e){
+$('stops').textContent='Não foi possível carregar as paradas.';
+}
+}
+
+async function showArrivals(stop){
+$('arrivalModal').classList.add('show');
+$('arrivalTitle').textContent='Chegadas: '+stop.name;
+$('arrivalContent').textContent='Consultando...';
+
+try{
+const arr=await api(
+'/StopPoint/'+encodeURIComponent(stop.id)+'/Arrivals'
+);
+
+arr.sort((a,b)=>a.timeToStation-b.timeToStation);
+$('arrivalContent').innerHTML='';
+
+if(!arr.length){
+$('arrivalContent').textContent='Nenhuma previsão disponível.';
+return;
+}
+
+arr.slice(0,35).forEach(a=>{
+const div=document.createElement('div');
+div.className='arrival';
+
+const mins=Math.max(0,Math.floor(a.timeToStation/60));
+
+div.textContent=
+(a.lineName||'Serviço')+' → '+
+(a.destinationName||'Destino não informado')+' • '+
+(mins===0?'Chegando':mins+' min');
+
+$('arrivalContent').append(div);
+});
+
+}catch(e){
+$('arrivalContent').textContent='Previsões indisponíveis.';
+}
+}
+
+function closeModal(){
+$('arrivalModal').classList.remove('show');
+}
+
+async function planJourney(){
+const from=$('from').value.trim();
+const to=$('to').value.trim();
+if(!from||!to){
+$('journeyResult').textContent='Digite origem e destino.';
+return;
+}
+$('journeyResult').textContent='Calculando o melhor trajeto...';
+try{
+const data=await api('/Journey/JourneyResults/'+encodeURIComponent(from)+'/to/'+encodeURIComponent(to));
+const root=$('journeyResult');
+root.innerHTML='';
+const journeys=(data.journeys||[]).slice(0,5);
+if(!journeys.length){
+root.textContent='Nenhuma opção encontrada. Tente usar o nome oficial da estação ou parada.';
+return;
+}
+journeys.forEach((j,i)=>{
+const box=document.createElement('article');
+box.className='journey-option';
+const head=document.createElement('div');
+head.className='journey-head';
+const title=document.createElement('strong');
+title.textContent='Opção '+(i+1);
+const total=document.createElement('span');
+total.className='journey-total';
+total.textContent=(j.duration??'?')+' min';
+head.append(title,total);
+box.append(head);
+
+const legs=j.legs||[];
+const transitCount=legs.filter(l=>l.mode&&l.mode.name&&l.mode.name.toLowerCase()!=='walking').length;
+const summary=document.createElement('div');
+summary.className='journey-meta';
+summary.textContent=legs.length+' etapas • '+Math.max(0,transitCount-1)+' troca(s) aproximada(s)';
+box.append(summary);
+
+legs.forEach((leg,index)=>{
+const modeName=(leg.mode&&leg.mode.name)||'Trecho';
+const isWalk=modeName.toLowerCase()==='walking';
+const option=leg.routeOptions&&leg.routeOptions[0]||{};
+const lineName=option.name||option.lineIdentifier||'';
+const fromName=leg.departurePoint&&leg.departurePoint.commonName||'Ponto de partida';
+const toName=leg.arrivalPoint&&leg.arrivalPoint.commonName||'Ponto de chegada';
+const section=document.createElement('div');
+section.className='journey-leg '+(isWalk?'walk':'transit');
+const strong=document.createElement('strong');
+strong.textContent=(index+1)+'. '+(isWalk?'🚶 Caminhada':(modeName==='bus'?'🚌 Ônibus':'🚇 '+modeName))+(lineName?' • '+lineName:'');
+section.append(strong);
+const route=document.createElement('p');
+route.textContent=fromName+' → '+toName;
+section.append(route);
+
+const instruction=leg.instruction||{};
+if(instruction.summary||instruction.detailed){
+const detail=document.createElement('p');
+detail.textContent=instruction.summary||instruction.detailed;
+section.append(detail);
+}
+const duration=document.createElement('div');
+duration.className='journey-meta';
+duration.textContent=(leg.duration!=null?leg.duration+' min':'')+
+(leg.departureTime?' • Saída '+leg.departureTime:'')+
+(leg.arrivalTime?' • Chegada '+leg.arrivalTime:'');
+section.append(duration);
+
+const pathStops=leg.path&&leg.path.stopPoints||[];
+if(pathStops.length){
+const stopBox=document.createElement('div');
+stopBox.className='journey-stops';
+const label=document.createElement('strong');
+label.textContent='Estações/paradas neste trecho: ';
+stopBox.append(label);
+const names=pathStops.map(s=>s.name||s.commonName).filter(Boolean);
+const list=document.createElement('span');
+list.textContent=names.length?names.join(' → '):'Detalhes não fornecidos pela TfL';
+stopBox.append(list);
+section.append(stopBox);
+}
+box.append(section);
+});
+const footer=document.createElement('div');
+footer.className='journey-meta';
+footer.textContent='Etapas, linhas e conexões exibidas conforme os dados retornados pela TfL.';
+box.append(footer);
+root.append(box);
+});
+}catch(e){
+$('journeyResult').textContent='Não foi possível calcular o trajeto agora. Confira os nomes dos locais e tente novamente.';
+}
+}
+
+function exportLon(){
+const payload={
+format:'LON',
+version:1,
+city:'London',
+createdAt:new Date().toISOString(),
+history
+};
+
+const blob=new Blob(
+[JSON.stringify(payload,null,2)],
+{type:'application/json'}
+);
+
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+
+a.href=url;
+a.download='meu-transporte-londres.lon';
+a.click();
+
+URL.revokeObjectURL(url);
+}
+
+function importLon(ev){
+const f=ev.target.files[0];
+if(!f)return;
+
+const reader=new FileReader();
+
+reader.onload=()=>{
+try{
+const d=JSON.parse(reader.result);
+
+if(d.format!=='LON'||!d.history||typeof d.history!=='object'){
+throw Error();
+}
+
+history={...history,...d.history};
+saveHistory();
+renderLines();
+
+alert('Histórico importado!');
+
+}catch(e){
+alert('Arquivo .LON inválido ou incompatível.');
+}
+
+ev.target.value='';
+};
+
+reader.readAsText(f);
+}
+
+loadNetwork();
+</script>
+</body>
+</html>
