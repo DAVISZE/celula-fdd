@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101b36"><meta name="description" content="Central ao vivo de todos os principais serviços de transporte TfL em Londres"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>SIGNAL BOX 5.1 – London Transport Control</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root {
+  --navy:#101b36;
+  --blue:#2457c5;
+  --bg:#f2f4f8;
+  --ink:#172033;
+  --muted:#66718a;
+  --green:#16804b;
+  --red:#bd3434;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#eef2f8;color:var(--ink);font:15px/1.45 Arial,sans-serif}
+header{background:linear-gradient(135deg,#101b36,#203d78);color:white;padding:26px 18px;text-align:center;box-shadow:0 4px 18px #101b3622}
+header h1{margin:0 0 6px;font-size:clamp(23px,5vw,32px)}
+header p{margin:0;color:#dce6ff}
+main{max-width:1120px;margin:22px auto;padding:0 14px}
+h2{margin:0 0 12px}
+h3{margin:20px 0 9px}
+.panel{box-shadow:0 5px 18px #1720330b;border:1px solid #e7ebf2}
+.tabs{position:sticky;top:0;z-index:3;background:#eef2f8;padding:8px 0}
+.tabs button{min-height:48px}
+.panel.detail{border-top:4px solid var(--blue)}
+.tabs,.subtabs{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:12px 15px;font-weight:bold;cursor:pointer}
+.tabs button{flex:1;background:#dce2ed;font-size:16px}
+.tabs button.active{background:var(--blue);color:white}
+.panel{background:white;border-radius:15px;padding:18px;margin-bottom:14px}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+input,select{padding:12px;border:1px solid #cbd3e0;border-radius:9px;font-size:15px;flex:1;min-width:150px}
+.btn{background:#e9eef8;color:#24427d}
+.primary{background:var(--blue);color:white}
+.stats,.note{font-size:13px;color:var(--muted);margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.card{border:1px solid #e1e6ef;border-radius:12px;padding:13px;display:flex;gap:10px;align-items:center}
+.dot{width:13px;height:13px;border-radius:50%;flex:none}
+.cardinfo{flex:1;min-width:0}
+.cardinfo strong{display:block;overflow-wrap:anywhere}
+.small{font-size:12px;color:var(--muted);margin-top:4px}
+.state{font-size:12px;font-weight:bold;margin-top:6px}
+.good{color:var(--green)}
+.bad{color:var(--red)}
+.unknown{color:#986500}
+.card button{padding:8px;background:#edf1f7}
+.card button.done{background:#e0f4e8;color:#17653b}
+.detail{display:none}
+.detail.open{display:block}
+.subtabs button{background:#e6ebf4}
+.subtabs button.active{background:#263d70;color:white}
+.hidden{display:none!important}
+.stoplist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px}
+.stop{padding:9px;border:1px solid #e1e6ef;border-radius:8px;display:flex;gap:8px;align-items:center}
+.stop button{margin-left:auto;background:#eaf0fb;color:#24427d}
+.arrival{padding:9px;border-bottom:1px solid #e1e6ef;font-size:13px}
+.line-summary{background:#f5f7fb;border:1px solid #e1e6ef;border-radius:10px;padding:12px;margin:10px 0}
+.line-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #dce3ee;background:#fff;border-radius:20px;padding:5px 9px;margin:3px;font-size:12px;font-weight:bold}
+.line-chip .dot{width:9px;height:9px}
+.station-extra{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.stop{align-items:flex-start;flex-direction:column;background:#fff;box-shadow:0 2px 8px #17203308}
+.stop-main{width:100%;min-width:0}
+.stop-main strong{display:block;font-size:14px}
+.stop-actions{display:flex;flex-direction:row;gap:5px;width:100%}
+.stop-actions button{flex:1}
+.arrival-live{width:100%;margin-top:8px;padding:9px 10px;border-radius:9px;background:#f0f6ff;border:1px solid #dce8fb}
+.arrival-live-title{font-size:11px;font-weight:bold;color:#435779;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.arrival-live-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px solid #dfe8f5;font-size:12px}
+.arrival-live-row:first-of-type{border-top:0}
+.arrival-live-time{font-weight:bold;color:#17653b;white-space:nowrap}
+.arrival-live-empty{font-size:12px;color:var(--muted)}
+.section-intro{color:var(--muted);font-size:13px;margin:-3px 0 13px}
+.live-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0}
+.live-indicator{font-size:12px;color:var(--muted)}
+.live-indicator:before{content:'●';color:#16804b;margin-right:6px}
+.stoplist{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+@media(max-width:550px){header{padding:20px 12px}main{margin:12px auto}.tabs{gap:6px}.tabs button{font-size:14px;padding:10px 8px}.stoplist{grid-template-columns:1fr}}
+.journey-option{border:1px solid #dce3ee;border-radius:12px;padding:13px;margin:12px 0;background:#fff}
+.journey-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.journey-total{font-size:18px;font-weight:bold;color:#18366f}
+.journey-leg{border-left:4px solid #b9c5d8;margin:12px 0 12px 5px;padding:3px 0 5px 12px}
+.journey-leg strong{display:block}
+.journey-leg p{margin:5px 0;font-size:13px;line-height:1.45}
+.journey-leg.walk{border-left-style:dashed;border-left-color:#8b96a8}
+.journey-leg.transit{border-left-color:#2457c5}
+.journey-meta{font-size:12px;color:var(--muted);margin-top:5px}
+.journey-stops{background:#f5f7fb;border-radius:8px;padding:9px;margin-top:7px;font-size:12px;line-height:1.6}
+.connection-title{font-size:12px;font-weight:bold;color:#45516a;margin-top:7px}
+.progress{height:9px;background:#e7ebf2;border-radius:10px;overflow:hidden}
+.progress span{display:block;height:100%;background:#2b9b62;width:0}
+.modalback{position:fixed;inset:0;background:#08132999;display:none;align-items:center;justify-content:center;padding:14px;z-index:5}
+.modalback.show{display:flex}
+.modal{background:white;border-radius:15px;max-width:650px;width:100%;max-height:85vh;overflow:auto;padding:18px}
+.footer{text-align:center;font-size:12px;color:var(--muted);padding:12px}
+@media(max-width:550px){.panel{padding:13px}.row>*{min-width:100%}}
+
+/* SIGNAL BOX 2.0 */
+:root{--signal:#101b36;--signal2:#1d376c;--signalgreen:#20a464;--signalamber:#d69b25}
+body{padding-bottom:82px}
+header{position:relative;overflow:hidden;background:radial-gradient(circle at 85% 5%,#4268ae 0,transparent 34%),linear-gradient(135deg,#0b1429,#1c3972 72%,#14264c);text-align:left;padding:24px max(18px,calc((100vw - 1120px)/2))}
+.header-inner{max-width:1120px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-kicker{font-size:11px;letter-spacing:2px;color:#a9c5ff;font-weight:bold}
+.header-title{font-size:clamp(24px,5vw,35px);font-weight:900;margin:5px 0}
+.header-sub{font-size:13px;color:#dce6ff}
+.header-live{border:1px solid #ffffff35;background:#ffffff12;border-radius:13px;padding:10px 13px;min-width:130px;text-align:center;font-size:12px}
+.header-live b{display:block;color:#75e2a8;font-size:13px;margin-bottom:3px}
+.signal-dashboard{background:linear-gradient(145deg,#111d39,#1a315d);color:#fff;border:1px solid #344a75;padding:18px}
+.signal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.signal-top h2{margin:0;color:#fff}
+.signal-clock{font-size:12px;color:#b9c9e8}
+.signal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+.signal-stat{background:#ffffff0d;border:1px solid #ffffff18;border-radius:12px;padding:12px}
+.signal-stat strong{display:block;font-size:25px;line-height:1.1}
+.signal-stat span{display:block;color:#c3d0e8;font-size:11px;margin-top:5px}
+.signal-stat.ok strong{color:#70dfa1}.signal-stat.warn strong{color:#ffd06c}.signal-stat.down strong{color:#ff8585}
+.signal-bottom{display:grid;grid-template-columns:1.3fr 1fr;gap:12px}
+.signal-subpanel{background:#ffffff0b;border:1px solid #ffffff18;border-radius:12px;padding:12px;min-width:0}
+.signal-subpanel h3{margin:0 0 9px;font-size:13px;color:#dce7ff}
+.network-pills{display:flex;flex-wrap:wrap;gap:7px}
+.network-pill{display:flex;align-items:center;gap:6px;border:1px solid #ffffff2b;background:#ffffff0b;color:white;border-radius:8px;padding:7px 9px;font-size:11px;cursor:pointer}
+.network-pill i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.network-pill small{color:#c5d2e9}
+.quick-actions{display:flex;gap:8px;flex-wrap:wrap}
+.quick-actions button{background:#ffffff16;border:1px solid #ffffff28;color:#fff;font-size:12px;padding:10px}
+.quick-actions button:hover{background:#ffffff27}
+.achievement-panel{border-left:4px solid #d6a83c}
+.achievement-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.achievement-number{font-size:25px;font-weight:900;color:#9a6b00}
+.achievement-lines{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.achievement-lines span{font-size:11px;border-radius:20px;padding:5px 9px;background:#edf1f7;color:#536078}
+.achievement-lines span.done{background:#dcf5e7;color:#17653b;font-weight:bold}
+.tabs{background:#eef2f8;z-index:4}
+.tabs button{min-height:44px}
+.mobile-nav{display:none}
+.section-anchor{scroll-margin-top:78px}
+#networkStatus{display:flex;align-items:center;gap:7px}
+.signal-dot{width:8px;height:8px;background:#20a464;border-radius:50%;display:inline-block}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8eb4ff;outline-offset:2px}
+@media(max-width:700px){
+ header{padding:18px 15px}.header-inner{align-items:flex-start}.header-live{min-width:95px;padding:8px;font-size:10px}.header-title{font-size:24px}.header-sub{font-size:12px}
+ .signal-stats{grid-template-columns:repeat(2,1fr);gap:8px}.signal-stat{padding:10px}.signal-stat strong{font-size:22px}
+ .signal-bottom{grid-template-columns:1fr}.signal-dashboard{padding:14px}
+ .tabs{display:grid;grid-template-columns:1fr 1fr}.tabs button{font-size:13px;padding:10px 7px}
+ main{padding:0 10px;margin:10px auto}.panel{border-radius:13px;padding:13px}
+ .mobile-nav{position:fixed;z-index:20;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:7px 6px calc(7px + env(safe-area-inset-bottom));background:#101b36;border-top:1px solid #ffffff20;box-shadow:0 -5px 20px #101b3625}
+ .mobile-nav button{background:transparent;color:#b9c7e1;border-radius:9px;padding:7px 2px;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+ .mobile-nav button span{font-size:19px;line-height:1.1}.mobile-nav button.active{background:#29477f;color:white}
+ body{padding-bottom:calc(75px + env(safe-area-inset-bottom))}
+ .row{gap:7px}.row button{min-height:42px}
+ .grid{grid-template-columns:1fr}.card{padding:11px}.card button{font-size:11px;padding:8px}
+ .journey-option{padding:10px}.journey-total{font-size:16px}
+ .modalback{padding:7px}.modal{max-height:88vh;padding:13px}
+}
+@media(min-width:701px){.signal-dashboard{margin-bottom:18px}}
+
+
+/* SIGNAL BOX 3.0 — polished desktop + mobile */
+:root{--ink:#17243c;--muted:#6c7890;--line:#e4eaf3;--accent:#2858bd}
+body{background:#edf1f7;background-image:radial-gradient(#dbe3f0 0.7px,transparent 0.7px);background-size:18px 18px}
+main{max-width:1220px}
+.panel{box-shadow:0 10px 28px #14284b0b;border:1px solid #e4eaf3}
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.section-heading h2{margin:2px 0 5px}.eyebrow{font-size:10px;font-weight:900;letter-spacing:1.8px;color:#5574ac}
+.challenge-stamp{border:1px solid #e3c77d;background:#fff8df;color:#805c00;padding:8px 11px;border-radius:9px;font-size:11px;font-weight:900;letter-spacing:1px}
+#nearbyMap{height:360px;border-radius:15px;border:1px solid #dce4ef;z-index:1;background:#e8edf3;overflow:hidden}
+.nearby-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.nearby-toolbar select{max-width:170px;flex:0 1 170px}
+.nearby-layout{display:grid;grid-template-columns:1fr 1.1fr;gap:14px;margin-top:15px}.nearby-layout h3{margin:3px 0 9px}
+.nearby-list{display:grid;gap:8px;max-height:420px;overflow:auto}.nearby-card{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff;display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer}.nearby-card.active{border-color:#6b91dc;box-shadow:0 0 0 2px #dce8ff}.nearby-card strong{display:block}.nearby-card small{color:var(--muted)}
+.nearby-detail{border:1px solid var(--line);border-radius:12px;padding:13px;min-height:130px;background:#f9fbfe}.platform-group{border-top:1px solid #e5eaf2;padding:9px 0}.platform-name{font-size:12px;font-weight:900;color:#425575;margin-bottom:5px}.departure-row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;font-size:13px}.departure-row b{color:#16804b;white-space:nowrap}.departure-row small{display:block;color:var(--muted)}
+.challenge-box{display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(120deg,#101d3a,#234780);color:white;padding:17px;border-radius:14px;margin:12px 0}.challenge-label{font-size:10px;letter-spacing:1.6px;color:#afc7f6;font-weight:900}.challenge-destination{font-size:clamp(21px,4vw,29px);font-weight:900;margin-top:5px}.challenge-box .note{color:#d1def4;margin:4px 0 0}
+.train-tracker{display:flex;gap:0;overflow-x:auto;padding:14px 5px 18px;align-items:flex-start}.tracker-stop{position:relative;flex:0 0 112px;text-align:center;font-size:11px;color:#4f5d75}.tracker-stop:before{content:'';position:absolute;height:4px;background:#b9c6d9;top:9px;left:0;right:0;z-index:0}.tracker-stop:first-child:before{left:50%}.tracker-stop:last-child:before{right:50%}.tracker-dot{position:relative;z-index:1;width:20px;height:20px;border:5px solid #fff;box-shadow:0 0 0 2px #6e86aa;background:#2457c5;border-radius:50%;margin:0 auto 8px}.tracker-stop.current .tracker-dot{background:#20a464;box-shadow:0 0 0 3px #bdebd1}.tracker-stop small{display:block;color:#758198;margin-top:4px}
+.alert-center{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.alert-card{border:1px solid var(--line);border-left:4px solid #d5a12e;border-radius:10px;padding:11px;background:#fff}.alert-card.down{border-left-color:#c53b3b}.alert-card.good{border-left-color:#198a54}.alert-card strong{display:block}.alert-card p{font-size:12px;color:var(--muted);margin:5px 0 0}
+.bus-timetable{margin-top:17px;padding:13px;border:1px solid #dce6f3;background:#f7faff;border-radius:12px}.timetable-row{display:grid;grid-template-columns:70px 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid #e2e9f3;font-size:13px}.timetable-row:last-child{border-bottom:0}.timetable-row b{color:#17653b}
+@media(max-width:700px){
+ body{background:#f0f3f8}.header-inner{align-items:center}.header-live{min-width:88px}.section-heading{align-items:flex-start}.section-heading>button{width:100%}
+ #nearbyMap{height:290px}.nearby-layout{grid-template-columns:1fr}.nearby-list{max-height:300px}.nearby-toolbar>*{flex:1 1 100%;max-width:none!important}.challenge-box{align-items:stretch;flex-direction:column}.challenge-box button{width:100%}
+ .train-tracker{margin-right:-8px}.tracker-stop{flex-basis:96px}.timetable-row{grid-template-columns:58px 1fr auto;font-size:12px}
+ .mobile-nav{grid-template-columns:repeat(8,1fr)}.mobile-nav button{font-size:9px}
+}
+@media(min-width:701px){.mobile-nav{display:none!important}}
+
+
+/* PLATFORM ANNOUNCER — countdown and voice */
+.announcer-hero{background:linear-gradient(140deg,#0c1832,#23477f);color:#fff;border-radius:14px;padding:17px;margin-top:12px}
+.announcer-count{font-size:clamp(42px,12vw,68px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin:8px 0}
+.announcer-count small{font-size:16px;letter-spacing:0;color:#c9d8f2}
+.announcer-status{color:#c9d8f2;font-size:13px}
+.announcer-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.announcer-controls button{flex:1;min-width:130px}
+.announcer-platform{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.announcer-platform select{min-width:180px}
+
+.all-stations-toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.all-stations-toolbar input{flex:1;min-width:190px}
+.all-stations-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin-top:12px}
+.station-pick{width:100%;text-align:left;background:#f4f7fc;color:#17233c;border:1px solid #dce4f0;padding:12px;border-radius:11px}
+.station-pick strong{display:block}.station-pick small{color:#64748b}
+.station-pick.selected{border:2px solid var(--blue);background:#edf4ff}
+.all-station-detail{margin-top:15px;padding:14px;border:1px solid #dce4f0;border-radius:13px;background:#fbfcff}
+.all-arrival{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:11px 4px;border-bottom:1px solid #e7ecf3}
+.all-arrival:last-child{border-bottom:0}.all-arrival strong{display:block}.all-arrival small{display:block;color:#64748b;margin-top:3px}
+.all-arrival-time{font-weight:900;color:#16804b;white-space:nowrap}
+
+.announcer-result{border:1px solid #dce5f2;border-radius:11px;padding:10px;margin-top:8px;background:#f8faff;cursor:pointer;width:100%;text-align:left}
+.announcer-result:hover{border-color:#7196d8;background:#eef4ff}
+.announcer-result small{display:block;color:#68758c;margin-top:3px}
+.announcer-badge{display:inline-block;background:#e5f5eb;color:#17653b;border-radius:20px;padding:4px 9px;font-size:11px;font-weight:bold}
+@media(max-width:550px){.announcer-hero{padding:14px}.announcer-controls button{min-height:46px}}
+
+
+/* APP PAGES · navegação por rotas internas em um único HTML */
+:root{--sidebar-width:236px}
+body{padding-bottom:24px}
+header{position:sticky;top:0;z-index:30;text-align:left;padding:15px 22px}
+.header-inner{max-width:1500px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.header-title{font-size:25px;font-weight:900;letter-spacing:1.5px}
+.header-kicker{font-size:10px;letter-spacing:2px;opacity:.72}
+.header-sub{font-size:12px;opacity:.78}
+.header-live{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px}
+.app-sidebar{position:fixed;z-index:25;left:0;top:91px;bottom:0;width:var(--sidebar-width);padding:18px 12px;background:#101b36;color:#d9e4f8;display:flex;flex-direction:column;gap:7px;overflow:auto}
+.sidebar-label{padding:8px 12px 4px;color:#8295b8;font-size:10px;font-weight:800;letter-spacing:1.5px}
+.app-sidebar button{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;color:#c8d5eb;padding:12px 13px;border-radius:11px;font-size:14px;font-weight:700}
+.app-sidebar button:hover{background:#1b3158}.app-sidebar button.active{background:#29477f;color:white;box-shadow:inset 3px 0 #7eb1ff}
+.app-sidebar button span{font-size:19px;width:24px;text-align:center}
+main{max-width:1500px;margin:0 auto 0 calc(var(--sidebar-width) + max(18px, calc((100vw - var(--sidebar-width) - 1500px)/2)));padding:22px 22px 60px;min-height:calc(100vh - 90px)}
+.app-page{display:none;animation:pageIn .18s ease-out}.app-page.active{display:block}
+@keyframes pageIn{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.app-page>.panel,.app-page>.tabs{margin-bottom:18px}
+.page-heading{margin:0 0 16px}.page-heading h2{margin:0 0 5px}.page-heading p{color:var(--muted);margin:0}
+.mobile-nav{display:none!important}
+@media(max-width:900px){:root{--sidebar-width:205px}main{padding:16px 14px 40px}.app-sidebar{width:var(--sidebar-width)}}
+@media(max-width:700px){
+ header{padding:12px 14px}.header-title{font-size:21px}.header-live{font-size:10px}
+ .app-sidebar{display:none}main{margin:0;padding:13px 12px 90px;min-height:calc(100vh - 70px)}
+ .mobile-nav{display:grid!important;position:fixed;z-index:50;left:0;right:0;bottom:0;grid-template-columns:repeat(7,1fr);gap:3px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));background:#101b36;border-top:1px solid #ffffff20;box-shadow:0 -5px 20px #101b3625}
+ .mobile-nav button{background:transparent;color:#b9c7e1;border-radius:9px;padding:7px 2px;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+ .mobile-nav button span{font-size:19px;line-height:1.1}.mobile-nav button.active{background:#29477f;color:white}
+}
+
+
+.station-line-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.station-line-badges .line-chip{margin:0;padding:4px 8px;font-size:11px}
+.station-line-badges .line-chip .dot{width:9px;height:9px}
+.station-no-lines{font-size:11px;color:var(--muted)}
+.map-line-badge{display:inline-block;border-radius:5px;padding:3px 6px;margin:3px 2px 0 0;background:var(--line-color);color:var(--badge-text,#fff);font-size:10px;font-weight:800;white-space:nowrap}
+.all-station-detail-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+
+/* WHERE YOU ARE · live onboard locator */
+#whereMap{height:clamp(330px,58vh,620px);border-radius:16px;border:1px solid #dce4ef;z-index:1;background:#e8edf3;overflow:hidden}
+.where-hero{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:linear-gradient(135deg,#101b36,#244a88);color:#fff;border-radius:15px;padding:17px;margin:12px 0}
+.where-hero strong{display:block;font-size:clamp(21px,4vw,30px);line-height:1.15}.where-hero small{color:#d6e3ff}.where-live-dot{width:12px;height:12px;border-radius:50%;background:#62e6a1;box-shadow:0 0 0 6px #62e6a128}
+.where-controls{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.where-controls button{flex:1 1 145px}
+.where-station{border:1px solid #e2e8f2;border-radius:12px;padding:13px;margin-top:10px;background:#f8faff}
+.where-station strong{font-size:17px}.where-station .station-line-badges{margin-top:7px}
+.where-warning{background:#fff7e6;border:1px solid #f1d79c;color:#74521a;padding:11px 13px;border-radius:10px;font-size:13px;margin:12px 0}
+@media(max-width:700px){#whereMap{height:48vh;min-height:300px}.where-hero{padding:14px}}
+
+/* SIGNAL BOX 5.0 · ADVANCED OPERATIONS */
+.ops-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ops-card{background:#fff;border:1px solid #dfe6f1;border-radius:15px;padding:16px;box-shadow:0 5px 18px #1720330b;min-width:0}
+.ops-card h3{margin:0 0 8px}.ops-muted{color:#68758c;font-size:13px}
+.ops-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.ops-row input{min-width:120px}
+.ops-list{display:grid;gap:8px;margin-top:10px}.ops-item{border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#f8faff}
+.ops-item strong{display:block}.ops-item small{color:#68758c}
+.ops-time{font-weight:900;color:#16804b;white-space:nowrap}
+.ops-item-line{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ops-chip{display:inline-block;border-radius:20px;padding:4px 8px;background:#eaf0fa;color:#24427d;font-size:11px;font-weight:800;margin:2px}
+.watch-toggle{background:#e9eef8;color:#24427d}.watch-toggle.active{background:#dff5e8;color:#17653b}
+.incident-critical{border-left:4px solid #bd3434}.incident-warning{border-left:4px solid #d99b22}.incident-good{border-left:4px solid #16804b}
+.analytics-bars{display:flex;align-items:end;gap:5px;height:110px;margin-top:12px;padding:8px 4px;border-bottom:1px solid #dce3ed}
+.analytics-bar{flex:1;min-width:7px;background:linear-gradient(180deg,#55a5ff,#2457c5);border-radius:5px 5px 0 0;position:relative}
+.analytics-bar span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9px;color:#68758c;white-space:nowrap}
+.desktop-mode{background:#071225!important;color:#eaf1ff!important}.desktop-mode header{background:#050d1c}.desktop-mode main{filter:saturate(1.1)}.desktop-mode .ops-card{background:#101d33;color:#eaf1ff;border-color:#29415f}.desktop-mode .ops-item{background:#172943;color:#eaf1ff;border-color:#29415f}.desktop-mode .ops-muted,.desktop-mode .ops-item small{color:#a9bbd6}
+.train-stage{height:245px;position:relative;overflow:hidden;border-radius:14px;background:radial-gradient(ellipse at 50% 15%,#263f67,#081326 75%);perspective:700px;display:flex;align-items:center;justify-content:center;margin:12px 0}
+.train-stage:before{content:"";position:absolute;left:-10%;right:-10%;bottom:23px;height:5px;background:#9aabc4;box-shadow:0 12px 0 #46566f;transform:rotateX(55deg)}
+.train-stage:after{content:"";position:absolute;left:0;right:0;bottom:0;height:55px;background:linear-gradient(#17263e,#091324)}
+.train-model{position:relative;z-index:2;width:210px;height:88px;transform:rotateY(-17deg) rotateX(3deg);transform-style:preserve-3d;animation:trainArrive 5s ease-in-out infinite}
+.train-front{position:absolute;inset:0 0 0 0;border-radius:22px 34px 12px 12px;background:linear-gradient(160deg,#e7edf6,#8b9bb2 55%,#dce5f0);border:3px solid #dce6f2;box-shadow:0 18px 25px #0008;overflow:hidden}
+.train-front:before{content:"";position:absolute;left:18px;right:18px;top:13px;height:34px;border-radius:9px;background:linear-gradient(135deg,#122744,#31577e);border:3px solid #667b96;box-shadow:inset 0 0 12px #0008}
+.train-front:after{content:"";position:absolute;left:0;right:0;bottom:14px;height:9px;background:var(--train-line,#dc241f);box-shadow:0 4px 0 #27374e}
+.train-window{position:absolute;z-index:2;top:21px;left:40px;color:#dff6ff;font-size:10px;font-weight:900;letter-spacing:2px}
+.train-lights{position:absolute;z-index:3;bottom:25px;left:10px;right:10px;display:flex;justify-content:space-between}.train-lights i{width:9px;height:9px;background:#fff2b5;border-radius:50%;box-shadow:0 0 12px #ffe58a}
+@keyframes trainArrive{0%,100%{transform:translateX(35px) rotateY(-17deg) scale(.91)}50%{transform:translateX(-25px) rotateY(-17deg) scale(1)}}
+.train-readout{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#eaf1ff;position:relative;z-index:4;padding:0 15px}.train-readout strong{font-size:clamp(23px,5vw,38px)}.train-readout small{display:block;color:#a9bbd6}
+.train-empty{color:#c6d5ec;text-align:center;position:relative;z-index:4;padding:15px}
+@media(max-width:800px){.ops-grid{grid-template-columns:1fr}.train-stage{height:220px}}
+
+
+/* SIGNAL BOX 5.1 — network control room refresh */
+.mode-deck{background:linear-gradient(145deg,#071326,#10264a 65%,#17345d);color:#f4f7ff;border:1px solid #28466f;border-radius:18px;padding:15px;margin:0 0 16px;box-shadow:0 12px 30px #06122622}
+.mode-deck-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 12px;font-size:11px;font-weight:800;letter-spacing:1.5px;color:#9fc4ff}
+.mode-deck-heading small{font-size:9px;letter-spacing:1px;color:#8197b8}
+.mode-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mode-tab{min-width:0;min-height:78px;border:1px solid #2b4264;border-radius:12px;background:#132542;color:#eaf1ff;padding:9px 6px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;text-align:left;cursor:pointer;transition:.18s}
+.mode-tab b{font-size:18px;line-height:1.1}.mode-tab span{font-size:11px;font-weight:800;white-space:normal}.mode-tab small{font-size:9px;color:#9fb0ca;line-height:1.2}
+.mode-tab.active{background:linear-gradient(145deg,#2457c5,#173c83);border-color:#79aaff;box-shadow:inset 0 0 0 1px #8db8ff55,0 5px 14px #0004}
+.mode-tab.active small{color:#dce9ff}.mode-hint{font-size:10px;line-height:1.45;color:#a9bbd5;margin:11px 2px 0}
+#networkSection{border-radius:16px}.card{border-radius:13px;transition:transform .15s,box-shadow .15s}.card:active{transform:scale(.99)}
+#search{min-width:0}.stats{border-radius:10px}
+@media(min-width:700px){.mode-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}.mode-tab{min-height:84px;padding:11px}}
+@media(max-width:390px){.mode-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.mode-tab{min-height:70px}}
+
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</head>
+<body>
+
+<header>
+<div class="header-inner">
+ <div><div class="header-kicker">TRANSPORT FOR LONDON • LIVE NETWORK</div><div class="header-title">🚇 SIGNAL BOX</div><div class="header-sub">London Transit Explorer · Central de operações</div></div>
+ <div class="header-live"><b>● LIVE NETWORK</b><span id="headerUpdated">Aguardando TfL...</span></div>
+</div>
+</header>
+
+<aside class="app-sidebar" aria-label="Menu principal">
+ <div class="sidebar-label">NAVEGAÇÃO</div>
+ <button class="active" data-page="painel" onclick="navigatePage('painel')"><span>🚦</span>Painel geral</button>
+ <button data-page="estacoes" onclick="navigatePage('estacoes')"><span>🗺️</span>Todas as estações</button>
+ <button data-page="onde" onclick="navigatePage('onde')"><span>📍</span>Onde você está?</button>
+ <button data-page="avisos" onclick="navigatePage('avisos')"><span>🔊</span>Avisos de plataforma</button>
+ <button data-page="linhas" onclick="navigatePage('linhas')"><span>🚇</span>Linhas e alertas</button>
+ <button data-page="viagem" onclick="navigatePage('viagem')"><span>🧭</span>Planejar viagem</button>
+ <button data-page="explorar" onclick="navigatePage('explorar')"><span>🎮</span>Desafios e conquistas</button>
+ <button data-page="operacoes" onclick="navigatePage('operacoes')"><span>🖥️</span>Central avançada</button>
+ <div style="margin-top:auto;padding:12px;color:#8295b8;font-size:11px">SIGNAL BOX 5.0<br>London Transit Explorer</div>
+</aside>
+
+<main>
+
+<div class="app-page active" id="page-dashboard" data-page="painel">
+<section class="panel signal-dashboard section-anchor" id="dashboardSection">
+ <div class="signal-top"><h2>🚦 Painel de operações</h2><div class="signal-clock" id="signalClock">Conectando à TfL...</div></div>
+ <div class="signal-stats">
+  <div class="signal-stat"><strong id="statLines">—</strong><span>Serviços carregados</span></div>
+  <div class="signal-stat ok"><strong id="statGood">—</strong><span>Operação normal</span></div>
+  <div class="signal-stat warn"><strong id="statWarn">—</strong><span>Com alterações</span></div>
+  <div class="signal-stat down"><strong id="statDown">—</strong><span>Interrompidos / graves</span></div>
+ </div>
+ <div class="signal-bottom">
+  <div class="signal-subpanel"><h3>ESTADO DA REDE · TOQUE NUMA LINHA</h3><div class="network-pills" id="networkPills"><span class="small">Carregando serviços...</span></div></div>
+  <div class="signal-subpanel"><h3>ATALHOS DO CENTRO DE CONTROLE</h3><div class="quick-actions"><button onclick="goTo('announcerSection')">🔊 Avisos</button><button onclick="goTo('networkSection')">🚇 Linhas</button><button onclick="goTo('journeySection')">🧭 Planejar viagem</button><button onclick="goTo('achievementSection')">🏆 Conquistas</button><button onclick="loadNetwork()">↻ Atualizar rede</button></div></div>
+ </div>
+</section>
+
+</div>
+<div class="app-page" id="page-announcer" data-page="avisos">
+<section class="panel section-anchor" id="announcerSection">
+ <div class="section-heading"><div><div class="eyebrow">PLATFORM ANNOUNCER · VOICE COUNTDOWN</div><h2>🔊 Avisos de plataforma</h2><p class="section-intro">Pesquise uma estação, escolha a plataforma e acompanhe a chegada do seu trem com avisos falados.</p></div><span class="announcer-badge">LIVE COUNTDOWN</span></div>
+ <div class="row"><input id="announcerSearch" placeholder="Pesquisar estação (ex.: Victoria, Waterloo, Earlsfield)" autocomplete="off"><button class="primary" onclick="searchAnnouncerStations()">Pesquisar</button></div>
+ <div id="announcerSearchResults" aria-live="polite"><p class="note">Digite o nome de uma estação para começar. A pesquisa usa os dados da TfL.</p></div>
+ <div id="announcerSelectedStation" class="line-summary hidden"></div>
+ <div class="announcer-platform"><label for="announcerPlatform"><strong>Plataforma:</strong></label><select id="announcerPlatform" disabled><option value="">Selecione uma estação primeiro</option></select><button class="btn" id="announcerLoadBtn" onclick="loadAnnouncerPlatform()" disabled>Carregar partidas</button></div>
+ <div class="announcer-hero" id="announcerHero"><div class="announcer-status">AGUARDANDO SELEÇÃO DE PLATAFORMA</div><div class="announcer-count">-- <small>min</small></div><div class="announcer-status">Escolha uma estação e uma plataforma para iniciar.</div></div>
+ <div class="announcer-controls"><button class="primary" id="announcerStartBtn" onclick="startAnnouncer()" disabled>▶ Iniciar avisos</button><button class="btn" onclick="testAnnouncerSound()">🔔 Testar som</button><button class="btn" onclick="stopAnnouncer()">■ Parar</button></div>
+ <p class="note" id="announcerInfo">A tela será mantida ativa quando o navegador oferecer suporte. As previsões vêm da TfL; a contagem regressiva é atualizada localmente a cada segundo e sincronizada periodicamente com a API.</p>
+</section>
+
+
+</div>
+<div class="app-page" id="page-stations" data-page="estacoes">
+<section class="panel section-anchor" id="allStationsSection">
+ <div class="section-heading"><div><div class="eyebrow">LONDON UNDERGROUND · NETWORK DIRECTORY</div><h2>🗺️ Todas as Estações</h2><p class="section-intro">Explore a lista consolidada dos percursos das 11 linhas, pesquise qualquer estação e veja as linhas por cores oficiais, além dos trens, destinos e plataformas.</p></div><span class="announcer-badge">LIVE ARRIVALS</span></div>
+ <div class="all-stations-toolbar"><input id="allStationsSearch" placeholder="Pesquisar estação (ex.: Southfields, Victoria...)" autocomplete="off"><button class="primary" onclick="filterAllStations()">Pesquisar</button><button class="btn" onclick="loadAllStations(true)">↻ Atualizar lista</button></div>
+ <div class="note" id="allStationsStatus">Carregue a lista de estações para começar.</div>
+ <div class="all-stations-list" id="allStationsList"></div>
+ <div class="all-station-detail hidden" id="allStationDetail"><div class="row"><h3 id="allStationTitle">Estação</h3><button class="btn" onclick="refreshAllStationDetail()">↻ Atualizar chegadas</button></div><div id="allStationArrivals"><p class="note">Selecione uma estação para ver as chegadas.</p></div></div>
+</section>
+
+<section class="panel nearby-panel section-anchor" id="nearbySection">
+ <div class="section-heading"><div><div class="eyebrow">LOCALIZAÇÃO E PARTIDAS</div><h2>📍 Estações perto de você</h2><p class="section-intro">Encontre estações e paradas próximas, veja no mapa e consulte chegadas por plataforma.</p></div><button class="primary" onclick="findNearby()">⌖ Encontrar perto de mim</button></div>
+ <div class="nearby-toolbar"><span id="geoStatus" class="live-indicator">Aguardando sua localização</span><select id="nearbyRadius" aria-label="Raio de busca"><option value="800">800 metros</option><option value="1500" selected>1,5 km</option><option value="3000">3 km</option><option value="5000">5 km</option></select><button class="btn" onclick="findNearby()">↻ Atualizar</button></div>
+ <div id="nearbyMap" role="application" aria-label="Mapa de estações próximas"></div>
+ <div class="nearby-layout"><div><h3>Mais próximas</h3><div id="nearbyList" class="nearby-list"><p class="note">Toque em “Encontrar perto de mim” e permita o acesso à localização.</p></div></div><div><h3>Estação selecionada</h3><div id="nearbyDetail" class="nearby-detail"><p class="note">Selecione um marcador ou estação para ver as próximas partidas.</p></div></div></div>
+ <p class="note">A localização é solicitada pelo navegador. O mapa usa OpenStreetMap; os dados de transporte e previsões vêm da TfL. As plataformas aparecem quando a TfL as informa.</p>
+</section>
+
+</div>
+<div class="app-page" id="page-where" data-page="onde">
+<section class="panel section-anchor" id="whereSection">
+ <div class="section-heading"><div><div class="eyebrow">LIVE JOURNEY TRACKER · UNDERGROUND</div><h2>📍 Onde você está?</h2><p class="section-intro">Acompanhe sua posição no mapa, descubra estações próximas e veja quais linhas passam por elas.</p></div><span class="announcer-badge">GPS TRACKER</span></div>
+ <div class="where-hero"><div><small id="whereGpsState">LOCALIZAÇÃO DESLIGADA</small><strong id="whereMainStatus">Pronto para localizar você</strong><small id="whereAccuracy">Ative o acompanhamento para começar</small></div><span class="where-live-dot" id="whereLiveDot" style="background:#9aa8bd;box-shadow:none"></span></div>
+ <div class="where-controls"><button class="primary" id="whereStartBtn" onclick="startWhereTracking()">▶ Começar acompanhamento</button><button class="btn" onclick="refreshWhereNearby()">↻ Atualizar estações</button><button class="btn" onclick="centerWhereMap()">◎ Centralizar mapa</button></div>
+ <div id="whereMap" role="application" aria-label="Mapa ao vivo da sua localização e estações de metrô"></div>
+ <div class="where-warning">⚠️ Dentro dos túneis, o GPS do celular pode perder o sinal. O mapa manterá a última posição recebida e tentará atualizar quando o sinal voltar. A linha exibida é uma estimativa baseada nas estações próximas — não é um rastreamento oficial do trem pela TfL.</div>
+ <div class="where-station" id="whereNearest"><strong>Estação mais próxima</strong><p class="note">Permita a localização para encontrar estações e linhas perto de você.</p></div>
+ <p class="note" id="whereVoiceStatus">Avisos por voz: desligados. Você pode ativá-los para ouvir a linha provável e a estação próxima.</p>
+ <div class="where-controls"><button class="btn" id="whereVoiceBtn" onclick="toggleWhereVoice()">🔊 Ativar avisos por voz</button><button class="btn" onclick="stopWhereTracking()">■ Parar acompanhamento</button></div>
+</section>
+</div>
+<div class="app-page" id="page-network" data-page="linhas">
+<div class="mode-deck" aria-label="Selecionar serviço de transporte">
+ <div class="mode-deck-heading"><span>NETWORK SELECTOR</span><small>ESCOLHA UMA REDE TfL</small></div>
+ <div class="mode-tabs" id="modeTabs">
+  <button class="mode-tab active" data-mode="tube" onclick="setMode('tube')"><b>🚇</b><span>Underground</span><small>11 linhas</small></button>
+  <button class="mode-tab" data-mode="overground" onclick="setMode('overground')"><b>🚆</b><span>Overground</span><small>Rede ferroviária</small></button>
+  <button class="mode-tab" data-mode="elizabeth-line" onclick="setMode('elizabeth-line')"><b>🚄</b><span>Elizabeth line</span><small>Cross-London</small></button>
+  <button class="mode-tab" data-mode="dlr" onclick="setMode('dlr')"><b>🚈</b><span>DLR</span><small>Docklands</small></button>
+  <button class="mode-tab" data-mode="tram" onclick="setMode('tram')"><b>🚊</b><span>Trams</span><small>Tramlink</small></button>
+  <button class="mode-tab" data-mode="bus" onclick="setMode('bus')"><b>🚌</b><span>Buses</span><small>Ônibus TfL</small></button>
+  <button class="mode-tab" data-mode="river-bus" onclick="setMode('river-bus')"><b>⛴️</b><span>River Bus</span><small>Thames Clippers</small></button>
+  <button class="mode-tab" data-mode="cable-car" onclick="setMode('cable-car')"><b>🚡</b><span>Cable Car</span><small>IFS Cloud</small></button>
+  <button class="mode-tab" data-mode="national-rail" onclick="setMode('national-rail')"><b>🚉</b><span>National Rail</span><small>Quando disponível na TfL</small></button>
+ </div>
+ <p class="mode-hint">Os serviços são carregados diretamente da API oficial da TfL. A disponibilidade de rotas, paradas e previsões varia conforme o serviço.</p>
+</div>
+<section class="panel section-anchor" id="networkSection">
+<h2>Linhas de transporte</h2>
+<p class="section-intro">Escolha uma linha para ver o percurso, as estações, conexões, alertas e chegadas em tempo real.</p>
+<div class="row">
+<input id="search" placeholder="Pesquisar linha (ex.: Central ou 39)" oninput="renderLines()">
+<button class="btn" onclick="loadNetwork()">↻ Atualizar</button>
+</div>
+<div class="stats" id="networkStatus">Carregando...</div>
+<div class="grid" id="lineList"></div>
+</section>
+
+<section class="panel detail" id="detail">
+<div class="row">
+<div>
+<h2 id="detailTitle">Detalhes</h2>
+<div id="detailMeta"></div>
+</div>
+<button onclick="closeDetail()">Fechar ✕</button>
+</div>
+
+<div id="detailStatus" class="note"></div>
+
+<div class="subtabs">
+<button class="active" data-view="overview" onclick="showDetailTab('overview')">Visão geral</button>
+<button data-view="stops" onclick="showDetailTab('stops')">Estações / paradas</button>
+<button data-view="disruptions" onclick="showDetailTab('disruptions')">Alertas</button>
+</div>
+
+<div id="view-overview">
+<h3>Trajetos e direções</h3>
+<div id="branches" class="note">Carregando...</div>
+<h3>Informações da linha</h3>
+<div id="overviewInfo" class="note"></div>
+<h3>Estações e conexões</h3>
+<div id="lineConnections" class="line-summary">As conexões serão carregadas junto com as estações.</div>
+<h3>🚆 Train Tracker · percurso visual</h3><p class="section-intro">Representação das estações e das previsões recebidas — não é localização GPS do trem.</p><div id="trainTracker" class="train-tracker"><span class="note">Carregue as estações para visualizar o percurso.</span></div>
+</div>
+
+<div id="view-stops" class="hidden">
+<div class="row">
+<select id="direction" onchange="loadSequence()">
+<option value="outbound">Ida</option>
+<option value="inbound">Volta</option>
+</select>
+<button class="btn" onclick="loadSequence()">Carregar paradas</button>
+</div>
+<div class="live-toolbar">
+<div>
+<strong>🚆 Próximas chegadas em cada estação</strong>
+<div class="live-indicator" id="liveStatus">Previsões em tempo real da TfL</div>
+</div>
+<button class="btn" onclick="refreshAllStationArrivals()">↻ Atualizar chegadas</button>
+</div>
+<p class="section-intro">Mostra os próximos trens desta linha em cada estação. Para ônibus, mostra as próximas chegadas dessa rota em cada parada.</p>
+<div id="stops" class="stoplist"></div>
+<div id="busTimetable" class="bus-timetable hidden"><h3>🚌 Horários previstos da rota</h3><p class="section-intro">Horários de chegada calculados com as previsões TfL disponíveis.</p><div id="busTimetableRows"></div></div>
+</div>
+
+<div id="view-disruptions" class="hidden">
+<div id="disruptions"></div>
+</div>
+</section>
+
+<section class="panel section-anchor" id="alertCenterSection">
+ <div class="section-heading"><div><div class="eyebrow">SERVICE UPDATES</div><h2>🔔 Alert Center</h2><p class="section-intro">Resumo das linhas com alterações e interrupções reportadas pela TfL.</p></div><button class="btn" onclick="renderAlertCenter()">↻ Atualizar painel</button></div>
+ <div id="alertCenter" class="alert-center"><p class="note">Carregando alertas...</p></div>
+</section>
+
+</div>
+<div class="app-page" id="page-journey" data-page="viagem">
+<section class="panel section-anchor" id="journeySection">
+<h2>🧭 Planejar uma viagem</h2>
+<p class="note">Pesquise origem e destino para ver cada etapa, linha utilizada, caminhada, trocas e estações intermediárias. Digite o nome de uma estação, parada ou endereço.</p>
+<div class="row">
+<input id="from" placeholder="De onde? Ex.: King's Cross">
+<input id="to" placeholder="Para onde? Ex.: Oxford Circus">
+<button class="btn primary" onclick="planJourney()">Encontrar trajeto</button>
+</div>
+<div id="journeyResult" class="note"></div>
+</section>
+
+</div>
+<div class="app-page" id="page-explore" data-page="explorar">
+<section class="panel section-anchor" id="challengeSection">
+ <div class="section-heading"><div><div class="eyebrow">JOGO DE EXPLORAÇÃO</div><h2>🎮 Desafio de rota</h2><p class="section-intro">Receba um destino aleatório e tente chegar usando o menor número de trocas.</p></div><span class="challenge-stamp">TUBE QUEST</span></div>
+ <div class="challenge-box"><div><div class="challenge-label">SEU DESAFIO</div><div id="challengeDestination" class="challenge-destination">Pronto para jogar?</div><p id="challengeHint" class="note">Gere um desafio para começar.</p></div><button class="primary" onclick="newChallenge()">🎲 Novo desafio</button></div>
+ <div class="row"><input id="challengeStart" placeholder="Sua estação de partida"><button class="btn" onclick="useChallengeStart()">Usar como origem</button></div>
+ <div id="challengeResult" class="note"></div>
+</section>
+
+
+<section class="panel section-anchor achievement-panel" id="achievementSection">
+<div class="achievement-head"><h2>🏆 Desafio das 11 linhas</h2><div class="achievement-number" id="tubeAchievement">0/11</div></div>
+<div class="achievement-lines" id="achievementLines"></div>
+<h3>Meu histórico geral</h3>
+<div class="stats" id="progressText"></div>
+<div class="progress"><span id="progressBar"></span></div>
+<p class="note">Marque as linhas que você já utilizou.</p>
+<div class="row">
+<button class="btn primary" onclick="exportLon()">Exportar .LON</button>
+<button class="btn" onclick="document.getElementById('importFile').click()">Importar .LON</button>
+<input id="importFile" type="file" accept=".lon,.json" hidden onchange="importLon(event)">
+</div>
+<div id="historyInfo" class="stats"></div>
+</section>
+
+
+<div class="app-page" id="page-operations" data-page="operacoes">
+ <div class="page-heading"><h2>🖥️ Central avançada de operações</h2><p>Ferramentas extras do SIGNAL BOX · dados de transporte consultados na TfL.</p></div>
+ <div class="ops-grid">
+  <section class="ops-card"><h3>🚨 LIVE INCIDENT CENTRE</h3><p class="ops-muted">Interrupções e alterações reportadas para as linhas carregadas.</p><div id="opsIncidents" class="ops-list">Aguardando dados da TfL…</div></section>
+  <section class="ops-card"><h3>🔔 LINE WATCHLIST</h3><p class="ops-muted">Marque suas linhas favoritas para acompanhar rapidamente.</p><div id="opsWatchlist" class="ops-list"></div></section>
+  <section class="ops-card"><h3>🚉 STATION DEPARTURE BOARD</h3><p class="ops-muted">Pesquise uma estação para ver as próximas partidas reais.</p><div class="ops-row"><input id="boardSearch" placeholder="Ex.: King's Cross"><button class="primary" onclick="searchOpsStation('board')">Pesquisar</button></div><div id="boardResults" class="ops-list"></div><div id="boardDepartures" class="ops-list"></div></section>
+  <section class="ops-card"><h3>🚄 3D NEXT TRAIN DISPLAY</h3><p class="ops-muted">Modelo animado em perspectiva, sincronizado com a próxima previsão da TfL.</p><div class="ops-row"><input id="train3dSearch" placeholder="Estação (ex.: Waterloo)"><button class="primary" onclick="searchOpsStation('train3d')">Pesquisar</button></div><div id="train3dResults" class="ops-list"></div><div class="train-stage"><div id="train3dEmpty" class="train-empty">Escolha uma estação para receber os próximos trens.</div><div id="train3dVisual" hidden><div class="train-model" id="trainModel"><div class="train-front"></div><div class="train-window">SIGNAL BOX</div><div class="train-lights"><i></i><i></i></div></div><div class="train-readout"><div><strong id="train3dMinutes">--</strong><small id="train3dDestination">Aguardando previsão</small></div><div style="text-align:right"><b id="train3dLine">--</b><small id="train3dPlatform">Plataforma não informada</small></div></div></div></div><div id="train3dMeta" class="ops-muted">Previsões atualizadas automaticamente.</div></section>
+  <section class="ops-card"><h3>🧭 ROUTE COMPARISON</h3><p class="ops-muted">Compare alternativas de viagem retornadas pelo planejador da TfL.</p><div class="ops-row"><input id="compareFrom" placeholder="De onde?"><input id="compareTo" placeholder="Para onde?"><button class="primary" onclick="compareOpsRoutes()">Comparar rotas</button></div><div id="compareResults" class="ops-list"></div></section>
+  <section class="ops-card"><h3>📊 NETWORK ANALYTICS</h3><p class="ops-muted">Histórico local de consultas do status da rede neste dispositivo. Não é um arquivo histórico oficial da TfL.</p><div id="analyticsSummary" class="ops-muted">Coletando a primeira amostra…</div><div id="analyticsBars" class="analytics-bars"></div><div class="ops-muted" id="analyticsLabels">As amostras começam quando a rede é consultada.</div></section>
+ </div>
+ <section class="ops-card" style="margin-top:14px"><div class="ops-item-line"><div><h3 style="margin:0">🖥️ SIGNAL BOX DESKTOP MODE</h3><p class="ops-muted" style="margin:4px 0 0">Modo de central escura para uso em tela cheia.</p></div><button class="primary" id="desktopModeBtn" onclick="toggleDesktopMode()">Ativar modo central</button></div></section>
+</div>
+<div class="footer">
+Dados fornecidos pela Transport for London (TfL).
+SIGNAL BOX 5.1 · Rede TfL ampliada · Localização ao vivo e navegação por páginas, avisos por voz e chegadas ao vivo · Aplicação independente, não oficial. Dados ao vivo sujeitos à disponibilidade da API TfL.
+</div>
+</main>
+<nav class="mobile-nav" aria-label="Navegação principal">
+ <button class="active" data-page="painel" onclick="navigatePage('painel')"><span>🚦</span>Painel</button>
+ <button data-page="estacoes" onclick="navigatePage('estacoes')"><span>🗺️</span>Estações</button>
+ <button data-page="onde" onclick="navigatePage('onde')"><span>📍</span>Onde?</button>
+ <button data-page="linhas" onclick="navigatePage('linhas')"><span>🚇</span>Linhas</button>
+ <button data-page="viagem" onclick="navigatePage('viagem')"><span>🧭</span>Viagem</button>
+ <button data-page="explorar" onclick="navigatePage('explorar')"><span>🏆</span>Explorar</button>
+ <button data-page="operacoes" onclick="navigatePage('operacoes')"><span>🖥️</span>Central</button>
+</nav>
+
+<div class="modalback" id="arrivalModal" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+<div class="row">
+<h2 id="arrivalTitle">Próximas chegadas</h2>
+<button onclick="closeModal()">Fechar ✕</button>
+</div>
+<div id="arrivalContent"></div>
+</div>
+</div>
+
+<script>
+const API='https://api.tfl.gov.uk';
+
+const colors={
+bakerloo:'#B26300',
+central:'#DC241F',
+circle:'#FFC80A',
+district:'#007D32',
+'hammersmith-city':'#F589A6',
+jubilee:'#838D93',
+metropolitan:'#9B0058',
+northern:'#000000',
+piccadilly:'#0019A8',
+victoria:'#039BE5',
+'waterloo-city':'#76D0BD',
+'overground':'#EE7C0E','elizabeth-line':'#6950A1','dlr':'#00A4A7',
+'tram':'#66CC00','bus':'#D71920','river-bus':'#0072BC',
+'cable-car':'#E31837','national-rail':'#7B2D8E'
+};
+
+let mode='tube';
+let lines=[];
+let statuses={};
+let history=readHistory();
+let selected=null;
+let updatedAt=null;
+
+const $=id=>document.getElementById(id);
+
+async function api(path){
+const r=await fetch(API+path);
+if(!r.ok)throw new Error('Erro TfL '+r.status);
+return r.json();
+}
+
+function lineColor(id){
+return colors[String(id||'').toLowerCase()]||'#2457c5';
+}
+
+function addLineChip(parent,lineName,lineId,transportMode){
+const chip=document.createElement('span');
+chip.className='line-chip';
+const dot=document.createElement('span');
+dot.className='dot';
+dot.style.background=lineColor(lineId);
+const label=document.createElement('span');
+label.textContent=(lineName||lineId||'Linha')+(transportMode==='bus'?' (ônibus)':'');
+chip.append(dot,label);
+parent.append(chip);
+}
+
+function normalizeLineId(value){
+ return String(value||'').toLowerCase().trim().replace(/\s*&\s*/g,'-').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+}
+function stationLineList(st){
+ const raw=Array.isArray(st?.lines)?st.lines:[];
+ const seen=new Set();
+ return raw.filter(x=>{const id=normalizeLineId(x.id||x.lineId||x.name);if(!id||seen.has(id))return false;seen.add(id);return true;})
+  .map(x=>({id:normalizeLineId(x.id||x.lineId||x.name),name:x.name||x.id||x.lineId||'Linha'}))
+  .sort((a,b)=>a.name.localeCompare(b.name));
+}
+function appendStationLineBadges(root,st){
+ const wrap=document.createElement('div');wrap.className='station-line-badges';
+ const ls=stationLineList(st);
+ if(!ls.length){const no=document.createElement('small');no.className='station-no-lines';no.textContent='Linhas não informadas';wrap.append(no);}
+ else ls.forEach(l=>addLineChip(wrap,l.name,l.id));
+ root.append(wrap);return wrap;
+}
+function stationLineBadgesHtml(st){
+ const ls=stationLineList(st);
+ if(!ls.length)return '<span class=\"station-no-lines\">Linhas não informadas</span>';
+ return ls.map(l=>'<span class=\"map-line-badge\" style=\"--line-color:'+lineColor(l.id)+';--badge-text:'+(['circle','waterloo-city'].includes(l.id)?'#172033':'#fff')+'\">'+escapeHtml(l.name)+'</span>').join(' ');
+}
+
+const interchangeCache=new Map();
+let currentStops=[];
+let arrivalRefreshTimer=null;
+let refreshingArrivals=false;
+let sequenceToken=0;
+
+function stopArrivalTimer(){
+ if(arrivalRefreshTimer){clearInterval(arrivalRefreshTimer);arrivalRefreshTimer=null;}
+}
+
+function arrivalMinutes(seconds){
+ if(seconds<=25)return 'Chegando';
+ return Math.ceil(seconds/60)+' min';
+}
+
+async function getLiveArrivals(stop){
+ try{
+  const arrivals=await api('/StopPoint/'+encodeURIComponent(stop.id)+'/Arrivals');
+  const lineId=String(selected&&selected.id||'').toLowerCase();
+  return arrivals.filter(a=>
+   String(a.lineId||'').toLowerCase()===lineId ||
+   String(a.lineName||'').toLowerCase()===lineId
+  ).sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0)).slice(0,3);
+ }catch(e){return null;}
+}
+
+async function renderStopArrivals(stop,box){
+ const arrivals=await getLiveArrivals(stop);
+ if(!box.isConnected)return;
+ box.innerHTML='';
+ const title=document.createElement('div');
+ title.className='arrival-live-title';
+ title.textContent='Próximas chegadas • '+(mode==='tube'?'esta linha':'esta rota');
+ box.append(title);
+ if(arrivals===null){
+  const empty=document.createElement('div');empty.className='arrival-live-empty';
+  empty.textContent='Previsão temporariamente indisponível.';box.append(empty);return;
+ }
+ if(!arrivals.length){
+  const empty=document.createElement('div');empty.className='arrival-live-empty';
+  empty.textContent='Nenhuma chegada prevista desta linha neste momento.';box.append(empty);return;
+ }
+ arrivals.forEach(a=>{
+  const row=document.createElement('div');row.className='arrival-live-row';
+  const destination=document.createElement('span');
+  destination.textContent=(a.destinationName||a.towards||'Destino não informado')+(a.platformName?' • '+a.platformName:'');
+  const time=document.createElement('span');time.className='arrival-live-time';
+  time.textContent=arrivalMinutes(a.timeToStation||0);
+  row.append(destination,time);box.append(row);
+ });
+}
+
+async function refreshAllStationArrivals(){
+ if(!selected||!currentStops.length||refreshingArrivals)return;
+ refreshingArrivals=true;
+ const selectedId=selected.id;
+ $('liveStatus').textContent='Atualizando previsões...';
+ try{
+  for(let i=0;i<currentStops.length;i+=5){
+   if(!selected||selected.id!==selectedId)break;
+   await Promise.all(currentStops.slice(i,i+5).map(x=>renderStopArrivals(x.stop,x.box)));
+  }
+  if(selected&&selected.id===selectedId){
+   $('liveStatus').textContent='Atualizado às '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})+' • atualização automática a cada 45 segundos';
+  }
+ }finally{refreshingArrivals=false;}
+}
+
+async function getStopConnections(stop){
+if(!stop||!stop.id)return [];
+if(stop.lines&&stop.lines.length)return stop.lines;
+if(interchangeCache.has(stop.id))return interchangeCache.get(stop.id);
+const pending=api('/StopPoint/'+encodeURIComponent(stop.id))
+.then(data=>data.lines||[])
+.catch(()=>[]);
+interchangeCache.set(stop.id,pending);
+return pending;
+}
+
+function readHistory(){
+try{
+return JSON.parse(localStorage.getItem('londonTransitHistory')||'{}');
+}catch{
+return {};
+}
+}
+
+function saveHistory(){
+localStorage.setItem('londonTransitHistory',JSON.stringify(history));
+updateProgress();
+}
+
+function setMode(m){
+mode=m;
+selected=null;
+document.querySelectorAll('.mode-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===m));
+$('search').value='';
+$('detail').classList.remove('open');
+const labels={'tube':'London Underground','overground':'London Overground','elizabeth-line':'Elizabeth line','dlr':'Docklands Light Railway','tram':'London Trams','bus':'London Buses','river-bus':'River Bus','cable-car':'IFS Cloud Cable Car','national-rail':'National Rail'};
+$('networkStatus').textContent='Conectando à rede '+(labels[m]||m)+'...';
+loadNetwork();
+}
+
+
+const sectionRoutes={dashboardSection:'painel',announcerSection:'avisos',allStationsSection:'estacoes',nearbySection:'estacoes',whereSection:'onde',challengeSection:'explorar',networkSection:'linhas',detail:'linhas',alertCenterSection:'linhas',journeySection:'viagem',achievementSection:'explorar'};
+function navigatePage(route,updateHash=true){
+ const allowed=['painel','estacoes','onde','avisos','linhas','viagem','explorar','operacoes'];
+ if(!allowed.includes(route))route='painel';
+ document.querySelectorAll('.app-page').forEach(p=>p.classList.toggle('active',p.dataset.page===route));
+ document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===route));
+ if(updateHash && location.hash!=='#/'+route)history.pushState({page:route},'', '#/'+route);
+ window.scrollTo(0,0);
+ if(route==='estacoes')loadAllStations();
+ if(route==='linhas'&&nearbyMap)setTimeout(()=>nearbyMap.invalidateSize(),200);
+ if(route==='estacoes'&&nearbyMap)setTimeout(()=>nearbyMap.invalidateSize(),200);
+ if(route==='operacoes'){renderOpsWatchlist();renderOpsIncidents();renderAnalytics();}
+ if(route==='onde'){initWhereMap();setTimeout(()=>{if(whereMap)whereMap.invalidateSize();},220);}
+}
+function goTo(id,button){
+ const route=sectionRoutes[id]||'painel';navigatePage(route);
+ const el=$(id);if(el){setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),40);}
+ if(id==='nearbySection'&&nearbyMap)setTimeout(()=>nearbyMap.invalidateSize(),250);
+}
+function routeFromHash(){const route=(location.hash||'').replace(/^#\//,'');navigatePage(route||'painel',false);}
+window.addEventListener('hashchange',routeFromHash);
+window.addEventListener('popstate',routeFromHash);
+function updateSignalPanel(){
+ const total=lines.length;
+ let good=0,warn=0,down=0;
+ lines.forEach(line=>{
+  const arr=statuses[line.id]||[];
+  if(!arr.length){warn++;return;}
+  const worst=Math.min(...arr.map(x=>Number(x.statusSeverity??10)));
+  if(worst===10)good++;else if(worst<=5)down++;else warn++;
+ });
+ $('statLines').textContent=total;
+ $('statGood').textContent=good;
+ $('statWarn').textContent=warn;
+ $('statDown').textContent=down;
+ $('signalClock').textContent=updatedAt?'Última consulta: '+updatedAt.toLocaleTimeString():'Aguardando dados da TfL';
+ $('headerUpdated').textContent=updatedAt?'Atualizado '+updatedAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Aguardando TfL...';
+ const root=$('networkPills');root.innerHTML='';
+ lines.forEach(line=>{
+  const b=document.createElement('button');b.className='network-pill';
+  const dot=document.createElement('i');dot.style.background=mode==='tube'?lineColor(line.id):'#4b8de8';
+  const name=document.createElement('span');name.textContent=line.name;
+  const status=document.createElement('small');status.textContent=severityClass(line.id)==='good'?'NORMAL':statusText(line.id).slice(0,22).toUpperCase();
+  b.append(dot,name,status);b.onclick=()=>openLine(line);root.append(b);
+ });
+ updateAchievement();
+}
+function updateAchievement(){
+ const tubeIds=['bakerloo','central','circle','district','hammersmith-city','jubilee','metropolitan','northern','piccadilly','victoria','waterloo-city'];
+ const tubeNames=['Bakerloo','Central','Circle','District','Hammersmith & City','Jubilee','Metropolitan','Northern','Piccadilly','Victoria','Waterloo & City'];
+ const used=tubeIds.filter(id=>history['tube:'+id]);
+ $('tubeAchievement').textContent=used.length+'/11';
+ const root=$('achievementLines');root.innerHTML='';
+ tubeNames.forEach((name,i)=>{
+  const id=tubeIds[i],tag=document.createElement('span');
+  const done=!!history['tube:'+id];tag.className=done?'done':'';
+  tag.textContent=(done?'✓ ':'○ ')+name;root.append(tag);
+ });
+}
+
+async function loadNetwork(){
+$('networkStatus').textContent='Carregando linhas e situação atual...';
+$('lineList').innerHTML='';
+
+try{
+const [l,s]=await Promise.all([
+api('/Line/Mode/'+mode),
+api('/Line/Mode/'+mode+'/Status')
+]);
+
+lines=l;
+statuses={};
+
+s.forEach(x=>statuses[x.id]=x.lineStatuses||[]);
+
+updatedAt=new Date();
+recordNetworkSnapshot();
+renderLines();
+updateSignalPanel();
+
+$('networkStatus').textContent=
+lines.length+' linhas carregadas • Atualizado às '+updatedAt.toLocaleTimeString();
+
+}catch(e){
+$('networkStatus').textContent=
+'Não foi possível consultar a TfL. Verifique a internet.';
+}
+}
+
+function statusText(id){
+const arr=statuses[id]||[];
+if(!arr.length)return 'Estado não informado';
+return arr.map(x=>x.statusSeverityDescription||'Estado não informado').join(' · ');
+}
+
+function severityClass(id){
+const arr=statuses[id]||[];
+if(!arr.length)return 'unknown';
+return arr.every(x=>x.statusSeverity===10)?'good':'bad';
+}
+
+function renderLines(){
+const q=$('search').value.toLowerCase().trim();
+const root=$('lineList');
+root.innerHTML='';
+
+const found=lines.filter(x=>
+(x.name+' '+x.id).toLowerCase().includes(q)
+);
+
+found.forEach(line=>{
+const card=document.createElement('div');
+card.className='card';
+
+const dot=document.createElement('span');
+dot.className='dot';
+dot.style.background=colors[line.id]||colors[mode]||'#2457c5';
+
+const info=document.createElement('div');
+info.className='cardinfo';
+
+const name=document.createElement('strong');
+name.textContent=line.name;
+
+const code=document.createElement('div');
+code.className='small';
+code.textContent='Código: '+line.id;
+
+const st=document.createElement('div');
+st.className='state '+severityClass(line.id);
+st.textContent='● '+statusText(line.id);
+
+info.append(name,code,st);
+
+const open=document.createElement('button');
+open.textContent='Detalhes';
+open.onclick=()=>openLine(line);
+
+const done=document.createElement('button');
+done.className=history[mode+':'+line.id]?'done':'';
+done.textContent=history[mode+':'+line.id]?'✓ Já usei':'+ Já usei';
+done.onclick=()=>toggleHistory(line);
+
+card.append(dot,info,done,open);
+root.append(card);
+});
+
+if(!found.length){
+root.innerHTML='<div>Nenhuma linha encontrada.</div>';
+}
+
+updateProgress();
+}
+
+function toggleHistory(line){
+const k=mode+':'+line.id;
+
+if(history[k])delete history[k];
+else history[k]={
+name:line.name,
+mode:mode,
+markedAt:new Date().toISOString()
+};
+
+saveHistory();
+renderLines();
+}
+
+function updateProgress(){
+const count=Object.keys(history).length;
+
+$('progressText').textContent=
+count+' linha(s)/rota(s) marcadas no seu histórico';
+
+$('progressBar').style.width=
+Math.min(100,count/Math.max(lines.length,1)*100)+'%';
+
+updateAchievement();
+$('historyInfo').textContent=
+Object.values(history).map(x=>x.name+' ('+x.mode+')').join(' • ')
+||'Você ainda não marcou nenhuma linha.';
+}
+
+async function openLine(line){
+stopArrivalTimer();
+currentStops=[];
+sequenceToken++;
+selected=line;
+$('detail').classList.add('open');
+$('detailTitle').textContent=line.name;
+$('detailMeta').textContent=
+(({tube:'London Underground',overground:'London Overground','elizabeth-line':'Elizabeth line',dlr:'DLR',tram:'London Trams',bus:'London Buses','river-bus':'River Bus','cable-car':'IFS Cloud Cable Car','national-rail':'National Rail'})[mode]||mode)+' • '+line.id;
+
+$('detailStatus').textContent='Situação: '+statusText(line.id);
+$('branches').textContent='Buscando trajetos...';
+$('overviewInfo').textContent='Carregando...';
+$('lineConnections').textContent='Carregando estações e conexões...';
+$('stops').innerHTML='';
+$('disruptions').textContent='Buscando alertas...';
+
+showDetailTab('overview');
+$('detail').scrollIntoView({behavior:'smooth'});
+
+try{
+const [routes,dis]=await Promise.all([
+api('/Line/'+encodeURIComponent(line.id)+'/Route'),
+api('/Line/'+encodeURIComponent(line.id)+'/Disruption')
+]);
+
+$('branches').innerHTML='';
+
+if(routes.length){
+routes.forEach(r=>{
+const p=document.createElement('p');
+p.textContent=(r.routeSections||[])
+.map(x=>x.origin+' → '+x.destination)
+.filter(Boolean).join(' | ')||'Trajeto disponível na TfL';
+$('branches').append(p);
+});
+}else{
+$('branches').textContent='Trajetos não disponíveis.';
+}
+
+$('overviewInfo').textContent=
+'Nome: '+line.name+
+'. Identificador TfL: '+line.id+
+'. Situação atual: '+statusText(line.id)+
+'. A lista de estações/paradas e as conexões com outros serviços aparece na aba correspondente.';
+
+$('disruptions').innerHTML='';
+
+if(dis.length){
+dis.forEach(d=>{
+const box=document.createElement('div');
+box.className='arrival';
+box.textContent=(d.category||'Aviso')+': '+
+(d.description||d.additionalInfo||d.comments||'Detalhes não fornecidos');
+$('disruptions').append(box);
+});
+}else{
+$('disruptions').textContent='Nenhum alerta específico retornado.';
+}
+
+}catch(e){
+$('branches').textContent='Detalhes indisponíveis no momento.';
+$('disruptions').textContent='Alertas indisponíveis.';
+}
+
+loadSequence();
+}
+
+function showDetailTab(tab){
+document.querySelectorAll('.subtabs button').forEach(b=>
+b.classList.toggle('active',b.dataset.view===tab)
+);
+
+['overview','stops','disruptions'].forEach(x=>
+$('view-'+x).classList.toggle('hidden',x!==tab)
+);
+}
+
+function closeDetail(){
+$('detail').classList.remove('open');
+selected=null;
+currentStops=[];
+stopArrivalTimer();
+}
+
+async function loadSequence(){
+if(!selected)return;
+
+const dir=$('direction').value;
+sequenceToken++;
+stopArrivalTimer();
+currentStops=[];
+$('liveStatus').textContent='Carregando estações e previsões...';
+$('stops').textContent='Carregando paradas...';
+
+try{
+const data=await api(
+'/Line/'+encodeURIComponent(selected.id)+'/Route/Sequence/'+dir
+);
+
+const root=$('stops');
+root.innerHTML='';
+
+let stops=[];
+(data.stopPointSequences||[]).forEach(seq=>
+(seq.stopPoint||[]).forEach(s=>stops.push(s))
+);
+
+const seen=new Set();
+stops=stops.filter(s=>{
+if(seen.has(s.id))return false;
+seen.add(s.id);
+return true;
+});
+
+if(!stops.length){
+root.textContent='Paradas não disponíveis.';
+$('lineConnections').textContent='A TfL não retornou estações/paradas para esta linha.';
+return;
+}
+
+$('lineConnections').textContent='Analisando '+stops.length+' estações/paradas e os serviços que passam por elas...';
+Promise.all(stops.map(getStopConnections)).then(all=>{
+const unique=new Map();
+all.flat().forEach(x=>{if(x.id)unique.set(x.id,x);});
+const box=$('lineConnections');
+box.innerHTML='';
+const summary=document.createElement('p');
+summary.textContent=stops.length+' paradas/estações nesta sequência. '+unique.size+' linhas/serviços diferentes encontrados nas conexões retornadas pela TfL.';
+box.append(summary);
+const chips=document.createElement('div');
+unique.forEach(x=>addLineChip(chips,x.name,x.id,x.mode));
+box.append(chips);
+});
+
+stops.forEach((s,i)=>{
+const el=document.createElement('div');
+el.className='stop';
+
+const main=document.createElement('div');
+main.className='stop-main';
+const label=document.createElement('strong');
+label.textContent=(i+1)+'. '+s.name;
+const extra=document.createElement('div');
+extra.className='station-extra';
+extra.textContent='Consultando conexões...';
+main.append(label,extra);
+
+const liveBox=document.createElement('div');
+liveBox.className='arrival-live';
+liveBox.innerHTML='<div class="arrival-live-title">Carregando previsões...</div>';
+
+const actions=document.createElement('div');
+actions.className='stop-actions';
+const btn=document.createElement('button');
+btn.textContent='Chegadas';
+btn.onclick=()=>showArrivals(s);
+actions.append(btn);
+
+el.append(main,liveBox,actions);
+root.append(el);
+currentStops.push({stop:s,box:liveBox});
+
+getStopConnections(s).then(connections=>{
+extra.innerHTML='';
+if(!connections.length){
+extra.textContent='Conexões não informadas pela TfL.';
+return;
+}
+const title=document.createElement('div');
+title.className='connection-title';
+title.textContent='Conexões / linhas que atendem esta parada:';
+extra.append(title);
+const chips=document.createElement('div');
+connections.forEach(c=>addLineChip(chips,c.name,c.id,c.mode));
+extra.append(chips);
+});
+});
+
+const thisSequence=sequenceToken;
+await refreshAllStationArrivals();
+if(selected&&thisSequence===sequenceToken){
+ stopArrivalTimer();
+ arrivalRefreshTimer=setInterval(refreshAllStationArrivals,45000);
+}
+
+
+}catch(e){
+$('stops').textContent='Não foi possível carregar as paradas.';
+}
+}
+
+async function showArrivals(stop){
+$('arrivalModal').classList.add('show');
+$('arrivalTitle').textContent='Chegadas: '+stop.name;
+$('arrivalContent').textContent='Consultando...';
+
+try{
+const arr=await api(
+'/StopPoint/'+encodeURIComponent(stop.id)+'/Arrivals'
+);
+
+arr.sort((a,b)=>a.timeToStation-b.timeToStation);
+$('arrivalContent').innerHTML='';
+
+if(!arr.length){
+$('arrivalContent').textContent='Nenhuma previsão disponível.';
+return;
+}
+
+arr.slice(0,35).forEach(a=>{
+const div=document.createElement('div');
+div.className='arrival';
+
+const mins=Math.max(0,Math.floor(a.timeToStation/60));
+
+div.textContent=
+(a.lineName||'Serviço')+' → '+
+(a.destinationName||'Destino não informado')+' • '+
+(mins===0?'Chegando':mins+' min');
+
+$('arrivalContent').append(div);
+});
+
+}catch(e){
+$('arrivalContent').textContent='Previsões indisponíveis.';
+}
+}
+
+function closeModal(){
+$('arrivalModal').classList.remove('show');
+}
+
+async function planJourney(){
+const from=$('from').value.trim();
+const to=$('to').value.trim();
+if(!from||!to){
+$('journeyResult').textContent='Digite origem e destino.';
+return;
+}
+$('journeyResult').textContent='Calculando o melhor trajeto...';
+try{
+const data=await api('/Journey/JourneyResults/'+encodeURIComponent(from)+'/to/'+encodeURIComponent(to));
+const root=$('journeyResult');
+root.innerHTML='';
+const journeys=(data.journeys||[]).slice(0,5);
+if(!journeys.length){
+root.textContent='Nenhuma opção encontrada. Tente usar o nome oficial da estação ou parada.';
+return;
+}
+journeys.forEach((j,i)=>{
+const box=document.createElement('article');
+box.className='journey-option';
+const head=document.createElement('div');
+head.className='journey-head';
+const title=document.createElement('strong');
+title.textContent='Opção '+(i+1);
+const total=document.createElement('span');
+total.className='journey-total';
+total.textContent=(j.duration??'?')+' min';
+head.append(title,total);
+box.append(head);
+
+const legs=j.legs||[];
+const transitCount=legs.filter(l=>l.mode&&l.mode.name&&l.mode.name.toLowerCase()!=='walking').length;
+const summary=document.createElement('div');
+summary.className='journey-meta';
+summary.textContent=legs.length+' etapas • '+Math.max(0,transitCount-1)+' troca(s) aproximada(s)';
+box.append(summary);
+
+legs.forEach((leg,index)=>{
+const modeName=(leg.mode&&leg.mode.name)||'Trecho';
+const isWalk=modeName.toLowerCase()==='walking';
+const option=leg.routeOptions&&leg.routeOptions[0]||{};
+const lineName=option.name||option.lineIdentifier||'';
+const fromName=leg.departurePoint&&leg.departurePoint.commonName||'Ponto de partida';
+const toName=leg.arrivalPoint&&leg.arrivalPoint.commonName||'Ponto de chegada';
+const section=document.createElement('div');
+section.className='journey-leg '+(isWalk?'walk':'transit');
+const strong=document.createElement('strong');
+strong.textContent=(index+1)+'. '+(isWalk?'🚶 Caminhada':(modeName==='bus'?'🚌 Ônibus':'🚇 '+modeName))+(lineName?' • '+lineName:'');
+section.append(strong);
+const route=document.createElement('p');
+route.textContent=fromName+' → '+toName;
+section.append(route);
+
+const instruction=leg.instruction||{};
+if(instruction.summary||instruction.detailed){
+const detail=document.createElement('p');
+detail.textContent=instruction.summary||instruction.detailed;
+section.append(detail);
+}
+const duration=document.createElement('div');
+duration.className='journey-meta';
+duration.textContent=(leg.duration!=null?leg.duration+' min':'')+
+(leg.departureTime?' • Saída '+leg.departureTime:'')+
+(leg.arrivalTime?' • Chegada '+leg.arrivalTime:'');
+section.append(duration);
+
+const pathStops=leg.path&&leg.path.stopPoints||[];
+if(pathStops.length){
+const stopBox=document.createElement('div');
+stopBox.className='journey-stops';
+const label=document.createElement('strong');
+label.textContent='Estações/paradas neste trecho: ';
+stopBox.append(label);
+const names=pathStops.map(s=>s.name||s.commonName).filter(Boolean);
+const list=document.createElement('span');
+list.textContent=names.length?names.join(' → '):'Detalhes não fornecidos pela TfL';
+stopBox.append(list);
+section.append(stopBox);
+}
+box.append(section);
+});
+const footer=document.createElement('div');
+footer.className='journey-meta';
+footer.textContent='Etapas, linhas e conexões exibidas conforme os dados retornados pela TfL.';
+box.append(footer);
+root.append(box);
+});
+}catch(e){
+$('journeyResult').textContent='Não foi possível calcular o trajeto agora. Confira os nomes dos locais e tente novamente.';
+}
+}
+
+function exportLon(){
+const payload={
+format:'LON',
+version:1,
+city:'London',
+createdAt:new Date().toISOString(),
+history
+};
+
+const blob=new Blob(
+[JSON.stringify(payload,null,2)],
+{type:'application/json'}
+);
+
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+
+a.href=url;
+a.download='meu-transporte-londres.lon';
+a.click();
+
+URL.revokeObjectURL(url);
+}
+
+function importLon(ev){
+const f=ev.target.files[0];
+if(!f)return;
+
+const reader=new FileReader();
+
+reader.onload=()=>{
+try{
+const d=JSON.parse(reader.result);
+
+if(d.format!=='LON'||!d.history||typeof d.history!=='object'){
+throw Error();
+}
+
+history={...history,...d.history};
+saveHistory();
+renderLines();
+
+alert('Histórico importado!');
+
+}catch(e){
+alert('Arquivo .LON inválido ou incompatível.');
+}
+
+ev.target.value='';
+};
+
+reader.readAsText(f);
+}
+
+
+// ===== SIGNAL BOX 5.0: ONDE VOCÊ ESTÁ? · GPS + estações próximas + avisos =====
+let whereMap=null,whereUserMarker=null,whereAccuracyCircle=null,whereStationMarkers=[],whereWatchId=null,whereLastPosition=null,whereVoiceEnabled=false,whereLastSpokenLine='',whereLastSpokenStation='',whereLookupAt=0,whereLookupBusy=false;
+function initWhereMap(){
+ if(!window.L||whereMap)return;
+ whereMap=L.map('whereMap',{scrollWheelZoom:true}).setView([51.5074,-0.1278],12);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(whereMap);
+}
+function startWhereTracking(){
+ if(!navigator.geolocation){$('whereMainStatus').textContent='GPS não disponível neste navegador';return;}
+ initWhereMap();if(!whereMap){$('whereMainStatus').textContent='Mapa indisponível. Verifique a conexão.';return;}
+ if(whereWatchId!==null)navigator.geolocation.clearWatch(whereWatchId);
+ $('whereGpsState').textContent='SOLICITANDO LOCALIZAÇÃO';$('whereMainStatus').textContent='Aguardando sinal do GPS…';$('whereAccuracy').textContent='Mantenha esta página aberta';
+ whereWatchId=navigator.geolocation.watchPosition(onWherePosition,onWherePositionError,{enableHighAccuracy:true,maximumAge:4000,timeout:20000});
+ $('whereStartBtn').textContent='● Acompanhamento ativo';
+}
+function stopWhereTracking(){if(whereWatchId!==null){navigator.geolocation.clearWatch(whereWatchId);whereWatchId=null;}$('whereGpsState').textContent='ACOMPANHAMENTO PARADO';$('whereMainStatus').textContent=whereLastPosition?'Última posição guardada':'Pronto para localizar você';$('whereLiveDot').style.background='#9aa8bd';$('whereLiveDot').style.boxShadow='none';$('whereStartBtn').textContent='▶ Continuar acompanhamento';}
+function onWherePosition(pos){
+ const {latitude:lat,longitude:lon,accuracy}=pos.coords;whereLastPosition={lat,lon,accuracy,at:Date.now()};initWhereMap();if(!whereMap)return;
+ if(!whereUserMarker)whereUserMarker=L.circleMarker([lat,lon],{radius:10,color:'#fff',weight:3,fillColor:'#1769e0',fillOpacity:1}).addTo(whereMap).bindPopup('Você está aqui');else whereUserMarker.setLatLng([lat,lon]);
+ if(whereAccuracyCircle)whereMap.removeLayer(whereAccuracyCircle);whereAccuracyCircle=L.circle([lat,lon],{radius:Math.min(accuracy||50,500),color:'#1769e0',weight:1,fillColor:'#1769e0',fillOpacity:.08}).addTo(whereMap);
+ if(!whereMap._whereCentered){whereMap.setView([lat,lon],16);whereMap._whereCentered=true;}
+ $('whereGpsState').textContent='● GPS AO VIVO';$('whereMainStatus').textContent='Sua posição está sendo atualizada';$('whereAccuracy').textContent='Precisão aproximada: '+Math.round(accuracy)+' m · '+new Date(pos.timestamp).toLocaleTimeString('pt-BR');$('whereLiveDot').style.background='#62e6a1';$('whereLiveDot').style.boxShadow='0 0 0 6px #62e6a128';
+ if(Date.now()-whereLookupAt>12000)lookupWhereStations(lat,lon);
+}
+function onWherePositionError(err){$('whereGpsState').textContent='SEM SINAL GPS';$('whereMainStatus').textContent=whereLastPosition?'Mostrando a última posição conhecida':'Não foi possível obter sua localização';$('whereAccuracy').textContent=err&&err.code===1?'Permissão negada. Libere a localização nas configurações do navegador.':'O GPS pode estar bloqueado ou sem sinal — comum em túneis.';$('whereLiveDot').style.background='#e3a43b';$('whereLiveDot').style.boxShadow='none';}
+async function lookupWhereStations(lat,lon){if(whereLookupBusy)return;whereLookupBusy=true;whereLookupAt=Date.now();try{
+ const data=await api('/StopPoint?lat='+lat+'&lon='+lon+'&stopTypes=NaptanMetroStation,NaptanRailStation&radius=1800&useStopPointHierarchy=true');
+ const list=(data.stopPoints||[]).filter(x=>x.lat&&x.lon&&((x.modes||[]).includes('tube')||(x.stopType||'').includes('Metro'))).sort((a,b)=>distanceMeters(lat,lon,a.lat,a.lon)-distanceMeters(lat,lon,b.lat,b.lon)).slice(0,18);
+ whereStationMarkers.forEach(m=>whereMap.removeLayer(m));whereStationMarkers=[];
+ for(const st of list){let linesFound=Array.isArray(st.lines)?st.lines:[];if(!linesFound.length){linesFound=await getStopConnections(st).catch(()=>[]);st.lines=linesFound;}
+  const dist=Math.round(distanceMeters(lat,lon,st.lat,st.lon));const marker=L.circleMarker([st.lat,st.lon],{radius:7,color:'#fff',weight:2,fillColor:'#304f86',fillOpacity:1}).addTo(whereMap).bindPopup('<b>'+escapeHtml(st.commonName||st.name)+'</b><br>'+formatDistance(dist)+' de você<br>'+stationLineBadgesHtml(st));whereStationMarkers.push(marker);
+ }
+ const nearest=list[0];if(!nearest){$('whereNearest').innerHTML='<strong>Nenhuma estação de metrô encontrada por perto</strong><p class="note">Continue acompanhando ou atualize quando estiver mais perto de uma estação.</p>';return;}
+ const nearLines=Array.isArray(nearest.lines)&&nearest.lines.length?nearest.lines:await getStopConnections(nearest).catch(()=>[]);nearest.lines=nearLines;
+ const dist=Math.round(distanceMeters(lat,lon,nearest.lat,nearest.lon));
+ const lineLabel=nearLines.length===1?'Linha possível nesta região: '+(nearLines[0].name||nearLines[0].id):'Linhas que atendem esta estação:';$('whereNearest').innerHTML='<strong>Estação mais próxima: '+escapeHtml(nearest.commonName||nearest.name)+'</strong><p class="note">Aproximadamente '+formatDistance(dist)+' de você</p><p class="note">'+escapeHtml(lineLabel)+'</p>'+stationLineBadgesHtml(nearest)+'<p class="note">Estimativa por proximidade. Se houver várias linhas, o app mostra todas como possibilidades.</p>';
+ if(whereVoiceEnabled){const lineNames=nearLines.map(x=>x.name||x.id).filter(Boolean);const lineText=lineNames.join(', ');if(lineText&&lineText!==whereLastSpokenLine){speakAnnouncer('Você está perto de '+(nearest.commonName||nearest.name)+'. Esta estação é atendida pelas linhas: '+lineText);whereLastSpokenLine=lineText;}const stName=nearest.commonName||nearest.name;if(dist<450&&stName!==whereLastSpokenStation){speakAnnouncer('Você está chegando perto de '+stName+'.');whereLastSpokenStation=stName;}}
+ }catch(e){$('whereNearest').innerHTML='<strong>Não foi possível consultar estações</strong><p class="note">Verifique a conexão e tente atualizar novamente.</p>';}finally{whereLookupBusy=false;}}
+function refreshWhereNearby(){if(!whereLastPosition){startWhereTracking();return;}whereLookupAt=0;lookupWhereStations(whereLastPosition.lat,whereLastPosition.lon);}
+function centerWhereMap(){if(whereLastPosition&&whereMap)whereMap.setView([whereLastPosition.lat,whereLastPosition.lon],16);else startWhereTracking();}
+function toggleWhereVoice(){whereVoiceEnabled=!whereVoiceEnabled;$('whereVoiceBtn').textContent=whereVoiceEnabled?'🔇 Desativar avisos por voz':'🔊 Ativar avisos por voz';$('whereVoiceStatus').textContent=whereVoiceEnabled?'Avisos por voz ativados. Ao detectar uma estação próxima, o app anuncia o nome e as linhas que passam por ela.':'Avisos por voz desligados.';if(whereVoiceEnabled)speakAnnouncer('Avisos de localização ativados.');else if('speechSynthesis'in window)window.speechSynthesis.cancel();}
+
+// ===== SIGNAL BOX 3.0: mapa próximo, plataformas, partidas, tracker e desafios =====
+let nearbyMap=null, nearbyMarkers=[], nearbyStops=[], nearbyUserMarker=null, selectedNearby=null;
+let challengeTarget=null;
+function initNearbyMap(){
+ if(!window.L||nearbyMap)return;
+ nearbyMap=L.map('nearbyMap',{scrollWheelZoom:false}).setView([51.5074,-0.1278],12);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(nearbyMap);
+}
+function findNearby(){
+ const status=$('geoStatus');
+ if(!navigator.geolocation){status.textContent='Seu navegador não oferece geolocalização.';return;}
+ status.textContent='Solicitando sua localização...';
+ navigator.geolocation.getCurrentPosition(async pos=>{
+  const lat=pos.coords.latitude,lon=pos.coords.longitude,radius=Number($('nearbyRadius').value||1500);
+  initNearbyMap(); if(!nearbyMap){status.textContent='Mapa indisponível. Verifique a conexão.';return;}
+  nearbyMap.setView([lat,lon],15);
+  if(nearbyUserMarker)nearbyMap.removeLayer(nearbyUserMarker);
+  nearbyUserMarker=L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:3,fillColor:'#2867d8',fillOpacity:1}).addTo(nearbyMap).bindPopup('Você está aqui');
+  status.textContent='Buscando estações e paradas próximas...';
+  try{
+   const data=await api('/StopPoint?lat='+lat+'&lon='+lon+'&stopTypes=NaptanMetroStation,NaptanRailStation,NaptanBusCoachStation&radius='+radius+'&useStopPointHierarchy=true');
+   const list=(data.stopPoints||[]).filter(x=>x.lat&&x.lon).sort((a,b)=>distanceMeters(lat,lon,a.lat,a.lon)-distanceMeters(lat,lon,b.lat,b.lon)).slice(0,35);
+   nearbyStops=list; drawNearby(list,lat,lon); status.textContent=list.length+' estações/paradas encontradas num raio de '+radius+' m.';
+  }catch(e){status.textContent='Não foi possível buscar paradas próximas na TfL. Tente novamente.';}
+ },err=>{status.textContent=err.code===1?'Permissão de localização negada. Ative a localização no navegador para usar o mapa.':'Não foi possível obter sua localização.';},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+}
+function distanceMeters(a,b,c,d){const R=6371000,rad=x=>x*Math.PI/180;const x=rad(c-a),y=rad(d-b);const h=Math.sin(x/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function drawNearby(list,lat,lon){
+ nearbyMarkers.forEach(m=>nearbyMap.removeLayer(m));nearbyMarkers=[];$('nearbyList').innerHTML='';
+ if(!list.length){$('nearbyList').textContent='Nenhuma estação encontrada neste raio.';return;}
+ list.forEach((st,i)=>{
+  const dist=Math.round(distanceMeters(lat,lon,st.lat,st.lon));
+  const marker=L.marker([st.lat,st.lon]).addTo(nearbyMap).bindPopup('<b>'+escapeHtml(st.commonName||st.name)+'</b><br>'+dist+' m de distância<br>'+stationLineBadgesHtml(st));
+  marker.on('click',()=>selectNearby(st));nearbyMarkers.push(marker);
+  const card=document.createElement('button');card.className='nearby-card';
+  const info=document.createElement('span');const title=document.createElement('strong');title.textContent=st.commonName||st.name;const modes=document.createElement('small');modes.textContent=(st.modes||[]).join(' · ');info.append(title,modes);appendStationLineBadges(info,st);
+  const distance=document.createElement('b');distance.textContent=formatDistance(dist);card.append(info,distance);
+  card.onclick=()=>{nearbyMap.setView([st.lat,st.lon],17);marker.openPopup();selectNearby(st);document.querySelectorAll('.nearby-card').forEach(x=>x.classList.remove('active'));card.classList.add('active');};$('nearbyList').append(card);
+  // Nearby StopPoint search results often omit line memberships; enrich from the station detail endpoint.
+  getStopConnections(st).then(connections=>{
+   if(!connections||!connections.length)return;
+   st.lines=connections;
+   const old=info.querySelector('.station-line-badges');if(old)old.remove();appendStationLineBadges(info,st);
+   marker.setPopupContent('<b>'+escapeHtml(st.commonName||st.name)+'</b><br>'+dist+' m de distância<br>'+stationLineBadgesHtml(st));
+  });
+ });
+}
+function formatDistance(m){return m>=1000?(m/1000).toFixed(1)+' km':m+' m';}
+function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function selectNearby(st){
+ selectedNearby=st;const root=$('nearbyDetail');root.innerHTML='<h3>'+escapeHtml(st.commonName||st.name)+'</h3><p class="note">Consultando chegadas e plataformas...</p>';
+ try{
+  const [arr,detail]=await Promise.all([api('/StopPoint/'+encodeURIComponent(st.id)+'/Arrivals'),api('/StopPoint/'+encodeURIComponent(st.id))]);
+  const arrivals=(arr||[]).sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0));
+  const platforms=(detail.children||[]).filter(x=>x.id);
+  // Arrivals are grouped by TfL platformName; platform children are queried when the parent has no usable platform label.
+  let groups=new Map();arrivals.forEach(a=>{const key=a.platformName||'Plataforma não informada';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(a);});
+  if(!groups.size&&platforms.length){
+   const results=await Promise.all(platforms.slice(0,8).map(async pl=>({pl,arr:await api('/StopPoint/'+encodeURIComponent(pl.id)+'/Arrivals').catch(()=>[])})));
+   results.forEach(x=>{if(x.arr.length)groups.set(x.pl.commonName||x.pl.name||'Plataforma',x.arr.sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0)));});
+  }
+  root.innerHTML='<h3>'+escapeHtml(st.commonName||st.name)+'</h3><div class="note">'+(st.modes||[]).join(' · ')+' · '+(arrivals.length||0)+' previsões recebidas</div>';
+  const stationBadges=document.createElement('div');stationBadges.className='station-line-badges';
+  const lineInfo=st.lines&&st.lines.length?st.lines:(detail.lines||[]);lineInfo.forEach(x=>addLineChip(stationBadges,x.name||x.id,x.id||x.lineId,x.mode));root.append(stationBadges);
+  if(!groups.size){root.insertAdjacentHTML('beforeend','<p class="note">Nenhuma previsão disponível neste momento. A TfL pode não fornecer partidas para esta estação agora.</p>');return;}
+  groups.forEach((items,platform)=>{
+   const box=document.createElement('div');box.className='platform-group';const title=document.createElement('div');title.className='platform-name';title.textContent='▣ '+platform;box.append(title);
+   items.slice(0,8).forEach(a=>{const row=document.createElement('div');row.className='departure-row';const left=document.createElement('span');const chip=document.createElement('span');chip.className='map-line-badge';chip.style.background=lineColor(a.lineId||a.lineName);chip.textContent=a.lineName||a.modeName||'Serviço';left.append(chip,document.createTextNode(' → '+(a.destinationName||a.towards||'Destino não informado')));const right=document.createElement('b');right.textContent=new Date(Date.now()+(a.timeToStation||0)*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' · '+arrivalMinutes(a.timeToStation||0);row.append(left,right);box.append(row);});root.append(box);
+  });
+ }catch(e){root.innerHTML='<p class="note">Chegadas indisponíveis no momento. Tente atualizar.</p>';}
+}
+function renderAlertCenter(){
+ const root=$('alertCenter');root.innerHTML='';
+ if(!lines.length){root.textContent='Aguardando dados da TfL.';return;}
+ const impacted=lines.filter(l=>severityClass(l.id)!=='good');
+ const items=impacted.length?impacted:lines;
+ items.forEach(line=>{const box=document.createElement('div');box.className='alert-card '+(severityClass(line.id)==='good'?'good':(severityClass(line.id)==='bad'?'down':''));const name=document.createElement('strong');name.textContent=line.name+' · '+(severityClass(line.id)==='good'?'Normal':statusText(line.id));const p=document.createElement('p');p.textContent=severityClass(line.id)==='good'?'Nenhuma alteração reportada no status consultado.':statusText(line.id);box.append(name,p);root.append(box);});
+}
+function renderTrainTracker(stops){
+ const root=$('trainTracker');if(!root)return;root.innerHTML='';if(!stops.length){root.textContent='Sem estações para exibir.';return;}
+ stops.forEach((st,i)=>{const item=document.createElement('div');item.className='tracker-stop'+(i===0?' current':'');const dot=document.createElement('div');dot.className='tracker-dot';const name=document.createElement('strong');name.textContent=st.name;const small=document.createElement('small');small.textContent=i===0?'Início da sequência':'Estação '+(i+1);item.append(dot,name,small);root.append(item);});
+}
+function newChallenge(){
+ const candidates=["King's Cross St. Pancras",'Oxford Circus','Waterloo','Green Park','Liverpool Street','Stratford','Victoria','Bank','Paddington','Euston','London Bridge','Baker Street','Westminster',"Earl's Court",'Piccadilly Circus'];
+ challengeTarget=candidates[Math.floor(Math.random()*candidates.length)];$('challengeDestination').textContent=challengeTarget;$('challengeHint').textContent='Seu destino foi sorteado! Digite sua estação de partida e planeje a viagem.';$('challengeStart').value='';$('challengeResult').textContent='';
+}
+function useChallengeStart(){const from=$('challengeStart').value.trim();if(!from||!challengeTarget){$('challengeResult').textContent='Gere um desafio e informe sua estação de partida.';return;}$('from').value=from;$('to').value=challengeTarget;planJourney();goTo('journeySection');}
+// Override rendering hooks to update the 3.0 dashboards after TfL data loads.
+const originalLoadNetworkV3=loadNetwork;
+loadNetwork=async function(){await originalLoadNetworkV3();renderAlertCenter();};
+const originalLoadSequenceV3=loadSequence;
+loadSequence=async function(){await originalLoadSequenceV3();if(currentStops.length)renderTrainTracker(currentStops.map(x=>x.stop));if(mode==='bus')renderBusTimetable();};
+async function renderBusTimetable(){
+ const panel=$('busTimetable'),root=$('busTimetableRows');if(mode!=='bus'||!selected||!currentStops.length){panel.classList.add('hidden');return;}panel.classList.remove('hidden');root.innerHTML='<p class="note">Consultando previsões de horários da rota...</p>';
+ const sample=currentStops.slice(0,Math.min(12,currentStops.length));const results=await Promise.all(sample.map(async x=>({stop:x.stop,arr:await api('/StopPoint/'+encodeURIComponent(x.stop.id)+'/Arrivals').catch(()=>[])})));
+ root.innerHTML='';let count=0;results.forEach(x=>{const matches=x.arr.filter(a=>String(a.lineId||'').toLowerCase()===String(selected.id).toLowerCase()||String(a.lineName||'').toLowerCase()===String(selected.id).toLowerCase()).sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0)).slice(0,3);matches.forEach(a=>{count++;const row=document.createElement('div');row.className='timetable-row';const time=document.createElement('strong');time.textContent=new Date(Date.now()+(a.timeToStation||0)*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});const stop=document.createElement('span');stop.textContent=x.stop.name+' · '+(a.destinationName||a.towards||'Destino não informado')+(a.platformName?' · '+a.platformName:'');const mins=document.createElement('b');mins.textContent=arrivalMinutes(a.timeToStation||0);row.append(time,stop,mins);root.append(row);});});if(!count)root.textContent='Nenhuma previsão de chegada para esta rota nas paradas carregadas.';
+}
+
+// PLATFORM ANNOUNCER: station search, platform selection, second-by-second countdown and voice alerts.
+// Diretório completo do Underground: consolidado a partir dos percursos oficiais das 11 linhas.
+let allTubeStations=[];
+let activeAllStation=null;
+let allStationRefreshTimer=null;
+let allStationsLoadToken=0;
+function cleanStationName(name){
+ return String(name||'').toLowerCase().replace(/\bunderground\b/g,'').replace(/\bstation\b/g,'').replace(/\s+/g,' ').trim();
+}
+async function runWithLimit(items,limit,worker){
+ const out=new Array(items.length);let cursor=0;
+ const workers=Array.from({length:Math.min(limit,items.length)},async()=>{
+  while(true){const i=cursor++;if(i>=items.length)return;try{out[i]=await worker(items[i],i);}catch(e){out[i]=null;}}
+ });
+ await Promise.all(workers);return out;
+}
+async function getLineRouteStops(line){
+ const directions=['outbound','inbound'];
+ const results=await Promise.all(directions.map(dir=>api('/Line/'+encodeURIComponent(line.id)+'/Route/Sequence/'+dir).catch(()=>null)));
+ const stops=[];
+ results.filter(Boolean).forEach(data=>(data.stopPointSequences||[]).forEach(seq=>(seq.stopPoint||[]).forEach(st=>stops.push(st))));
+ return stops;
+}
+async function loadAllStations(force=false){
+ const status=$('allStationsStatus');
+ if(allTubeStations.length&&!force){filterAllStations();return;}
+ const token=++allStationsLoadToken;
+ status.textContent='Montando a lista completa pelos percursos oficiais das linhas...';$('allStationsList').innerHTML='';
+ try{
+  let tubeLines=(lines||[]).filter(x=>x&&x.id);
+  if(!tubeLines.length)tubeLines=await api('/Line/Mode/tube');
+  tubeLines=tubeLines.filter(x=>x&&x.id);
+  if(!tubeLines.length)throw new Error('Nenhuma linha retornada');
+  const routes=await runWithLimit(tubeLines,4,async line=>({line,stops:await getLineRouteStops(line)}));
+  if(token!==allStationsLoadToken)return;
+  const merged=new Map();
+  routes.filter(Boolean).forEach(({line,stops})=>{
+   stops.forEach(st=>{
+    if(!st||!st.id||!st.name)return;
+    const key=cleanStationName(st.name);
+    if(!key)return;
+    if(!merged.has(key))merged.set(key,{...st,commonName:st.name,name:st.name,ids:[st.id],lines:[]});
+    const item=merged.get(key);
+    if(!item.ids.includes(st.id))item.ids.push(st.id);
+    if(!item.lines.some(x=>x.id===line.id))item.lines.push({id:line.id,name:line.name});
+    // Prefer a coordinate-bearing station point and preserve all TfL IDs for arrival lookup.
+    if((!item.lat||!item.lon)&&st.lat&&st.lon){item.lat=st.lat;item.lon=st.lon;}
+   });
+  });
+  allTubeStations=[...merged.values()].sort((a,b)=>a.commonName.localeCompare(b.commonName,'en'));
+  if(!allTubeStations.length){
+   // Fallback to TfL's mode endpoint, but do not discard records based on a brittle stopType filter.
+   const raw=await api('/StopPoint/Mode/tube');
+   const fallback=Array.isArray(raw)?raw:(raw.stopPoints||[]);
+   fallback.filter(x=>x&&x.id&&x.commonName).forEach(st=>{
+    const key=cleanStationName(st.commonName);if(!key)return;
+    if(!merged.has(key))merged.set(key,{...st,name:st.commonName,commonName:st.commonName,ids:[st.id],lines:stationLineList(st)});
+   });
+   allTubeStations=[...merged.values()].sort((a,b)=>a.commonName.localeCompare(b.commonName,'en'));
+  }
+  if(!allTubeStations.length)throw new Error('A TfL não retornou estações');
+  status.textContent=allTubeStations.length+' estações únicas encontradas em '+tubeLines.length+' linhas. Pesquise ou selecione uma estação.';
+  filterAllStations();
+ }catch(e){
+  if(token===allStationsLoadToken)status.textContent='Não foi possível montar a lista agora. Toque em “Atualizar lista” para tentar novamente. Verifique a conexão com a TfL.';
+ }
+}
+function filterAllStations(){
+ const q=($('allStationsSearch').value||'').trim().toLowerCase(),list=$('allStationsList');list.innerHTML='';
+ const matches=allTubeStations.filter(st=>st.commonName.toLowerCase().includes(q));
+ $('allStationsStatus').textContent=matches.length+' de '+allTubeStations.length+' estações'+(q?' encontradas':' disponíveis')+'.';
+ matches.forEach(st=>{
+  const b=document.createElement('button');b.className='station-pick'+(activeAllStation?.key===cleanStationName(st.commonName)?' selected':'');
+  const strong=document.createElement('strong');strong.textContent=st.commonName;
+  const small=document.createElement('small');small.textContent='London Underground · '+stationLineList(st).length+' linha(s)';
+  b.append(strong,small);appendStationLineBadges(b,st);b.onclick=()=>selectAllStation(st);list.append(b);
+ });
+ if(!matches.length){const empty=document.createElement('p');empty.className='note';empty.textContent=allTubeStations.length?'Nenhuma estação corresponde à pesquisa.':'A lista ainda não foi carregada. Aguarde ou atualize.';list.append(empty);}
+}
+async function selectAllStation(st){
+ activeAllStation={...st,key:cleanStationName(st.commonName)};
+ $('allStationDetail').classList.remove('hidden');
+ const title=$('allStationTitle');title.textContent=st.commonName;
+ let titleWrap=title.parentElement;titleWrap.classList.add('all-station-detail-title');
+ const oldBadges=titleWrap.querySelector('.station-line-badges');if(oldBadges)oldBadges.remove();appendStationLineBadges(titleWrap,st);
+ $('allStationArrivals').innerHTML='<p class="note">Consultando todos os trens e plataformas...</p>';
+ filterAllStations();await refreshAllStationDetail();
+ if(allStationRefreshTimer)clearInterval(allStationRefreshTimer);
+ allStationRefreshTimer=setInterval(()=>{if(activeAllStation?.key===cleanStationName(st.commonName))refreshAllStationDetail();},30000);
+}
+async function refreshAllStationDetail(){
+ if(!activeAllStation)return;
+ const station=activeAllStation,box=$('allStationArrivals');box.innerHTML='<p class="note">Atualizando previsões da TfL...</p>';
+ try{
+  const ids=station.ids&&station.ids.length?station.ids:[station.id];
+  const batches=await Promise.all(ids.map(id=>api('/StopPoint/'+encodeURIComponent(id)+'/Arrivals').catch(()=>[])));
+  if(activeAllStation?.key!==cleanStationName(station.commonName))return;
+  const seen=new Set();
+  const arrivals=batches.flat().filter(a=>{const k=a.id||[a.lineId,a.destinationName,a.expectedArrival,a.platformName].join('|');if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0));
+  box.innerHTML='';
+  if(!arrivals.length){box.innerHTML='<p class="note">Nenhuma previsão disponível neste momento. A estação continua na lista; a TfL pode não fornecer chegadas agora.</p>';return;}
+  const summary=document.createElement('p');summary.className='note';summary.textContent=arrivals.length+' previsões recebidas · Atualização automática a cada 30 segundos.';box.append(summary);
+  arrivals.forEach(a=>{
+   const row=document.createElement('div');row.className='all-arrival';
+   const left=document.createElement('div');
+   const lineWrap=document.createElement('div');lineWrap.className='station-line-badges';
+   addLineChip(lineWrap,a.lineName||a.lineId||'Serviço',a.lineId||a.lineName,a.modeName);
+   const title=document.createElement('strong');title.textContent='→ '+(a.destinationName||a.towards||'Destino não informado');
+   const detail=document.createElement('small');detail.textContent='Plataforma: '+(a.platformName||'Não informada')+(a.direction?' · '+a.direction:'');
+   left.append(lineWrap,title,detail);
+   const time=document.createElement('div');time.className='all-arrival-time';const sec=Number(a.timeToStation||0);time.textContent=sec<=25?'Chegando':Math.ceil(sec/60)+' min';
+   row.append(left,time);box.append(row);
+  });
+ }catch(e){box.innerHTML='<p class="note">Não foi possível consultar as chegadas desta estação. Tente atualizar.</p>';}
+}
+function initAllStationsSearch(){$('allStationsSearch')?.addEventListener('input',filterAllStations);$('allStationsSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')filterAllStations();});}
+initAllStationsSearch();
+
+
+// ===== SIGNAL BOX 5.0 · ADVANCED OPERATIONS =====
+const opsWatchKey='signalBoxWatchlist';
+const opsAnalyticsKey='signalBoxNetworkSamples';
+let opsSelectedStation=null,opsTrainTimer=null;
+function readOpsWatch(){try{return JSON.parse(localStorage.getItem(opsWatchKey)||'[]')}catch(e){return[]}}
+function renderOpsWatchlist(){const root=$('opsWatchlist');if(!root)return;root.innerHTML='';const ids=['bakerloo','central','circle','district','hammersmith-city','jubilee','metropolitan','northern','piccadilly','victoria','waterloo-city'];const names=['Bakerloo','Central','Circle','District','Hammersmith & City','Jubilee','Metropolitan','Northern','Piccadilly','Victoria','Waterloo & City'];const watch=readOpsWatch();ids.forEach((id,i)=>{const row=document.createElement('div');row.className='ops-item-line';const label=document.createElement('strong');label.textContent=names[i];const b=document.createElement('button');b.className='watch-toggle'+(watch.includes(id)?' active':'');b.textContent=watch.includes(id)?'★ Favorita':'☆ Acompanhar';b.onclick=()=>{let w=readOpsWatch();w=w.includes(id)?w.filter(x=>x!==id):[...w,id];localStorage.setItem(opsWatchKey,JSON.stringify(w));renderOpsWatchlist()};row.append(label,b);root.append(row)});}
+function renderOpsIncidents(){const root=$('opsIncidents');if(!root)return;root.innerHTML='';if(!lines.length){root.textContent='Aguardando dados da rede.';return;}const impacted=lines.filter(l=>severityClass(l.id)!=='good');const list=impacted.length?impacted:lines;list.forEach(line=>{const sev=severityClass(line.id);const box=document.createElement('div');box.className='ops-item '+(sev==='bad'?'incident-critical':sev==='good'?'incident-good':'incident-warning');const title=document.createElement('strong');title.textContent=line.name+' · '+(sev==='good'?'Normal':statusText(line.id));const detail=document.createElement('small');detail.textContent=sev==='good'?'Nenhuma interrupção reportada no status atual.':'Status retornado pela TfL: '+statusText(line.id);box.append(title,detail);root.append(box)});}
+function recordNetworkSnapshot(){try{const arr=JSON.parse(localStorage.getItem(opsAnalyticsKey)||'[]');const counts={normal:0,warning:0,disrupted:0};lines.forEach(l=>{const s=severityClass(l.id);if(s==='good')counts.normal++;else if(s==='bad')counts.disrupted++;else counts.warning++});arr.push({at:Date.now(),...counts,total:lines.length});localStorage.setItem(opsAnalyticsKey,JSON.stringify(arr.slice(-24)));}catch(e){}}
+function renderAnalytics(){const summary=$('analyticsSummary'),bars=$('analyticsBars'),labels=$('analyticsLabels');if(!summary||!bars)return;let a=[];try{a=JSON.parse(localStorage.getItem(opsAnalyticsKey)||'[]')}catch(e){};summary.textContent=a.length?`${a.length} consultas registradas neste dispositivo · última: ${new Date(a[a.length-1].at).toLocaleTimeString()}`:'Nenhuma amostra ainda.';bars.innerHTML='';const max=Math.max(1,...a.map(x=>x.total||1));a.slice(-18).forEach(x=>{const b=document.createElement('div');b.className='analytics-bar';b.style.height=Math.max(8,(x.normal/max)*100)+'%';b.title=`${new Date(x.at).toLocaleString()} · ${x.normal} normais, ${x.warning} alertas, ${x.disrupted} graves`;const l=document.createElement('span');l.textContent=new Date(x.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});b.append(l);bars.append(b)});labels.textContent=a.length?'Barras mostram linhas em operação normal por consulta. Passe o cursor para ver os números.':'As amostras começam quando a rede é consultada.';}
+function toggleDesktopMode(){const on=document.body.classList.toggle('desktop-mode');$('desktopModeBtn').textContent=on?'Desativar modo central':'Ativar modo central';}
+async function searchOpsStation(kind){const input=$(kind==='board'?'boardSearch':'train3dSearch'),root=$(kind==='board'?'boardResults':'train3dResults');const q=input.value.trim();if(!q){root.textContent='Digite o nome de uma estação.';return;}root.textContent='Pesquisando estações na TfL…';try{const data=await api('/StopPoint/Search/'+encodeURIComponent(q)+'?modes=tube,overground,dlr,elizabeth-line');const matches=(data.matches||[]).slice(0,7);root.innerHTML='';if(!matches.length){root.textContent='Nenhuma estação encontrada.';return;}matches.forEach(st=>{const b=document.createElement('button');b.className='ops-item';b.style.textAlign='left';b.style.width='100%';b.textContent=st.name||st.commonName||st.id;b.onclick=()=>loadOpsDepartures(st,kind);root.append(b)});}catch(e){root.textContent='Não foi possível pesquisar agora. Tente novamente.';}}
+async function loadOpsDepartures(st,kind){const root=$(kind==='board'?'boardDepartures':'train3dMeta');root.textContent='Consultando próximas chegadas…';try{const arr=await api('/StopPoint/'+encodeURIComponent(st.id)+'/Arrivals');arr.sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0));if(kind==='board'){root.innerHTML='';if(!arr.length){root.textContent='Nenhuma partida prevista neste momento.';return;}arr.slice(0,12).forEach(a=>{const row=document.createElement('div');row.className='ops-item ops-item-line';const left=document.createElement('div');const strong=document.createElement('strong');strong.textContent=(a.lineName||a.lineId||'Serviço')+' → '+(a.destinationName||a.towards||'Destino não informado');const small=document.createElement('small');small.textContent=(a.platformName||'Plataforma não informada')+' · '+(a.currentLocation||'Localização não informada');left.append(strong,small);const time=document.createElement('b');time.className='ops-time';time.textContent=arrivalMinutes(a.timeToStation||0);row.append(left,time);root.append(row)});return;}opsSelectedStation=st;if(!arr.length){$('train3dEmpty').hidden=false;$('train3dEmpty').textContent='Sem previsões de chegada para esta estação.';$('train3dVisual').hidden=true;root.textContent='Nenhuma previsão retornada pela TfL.';return;}$('train3dEmpty').hidden=true;$('train3dVisual').hidden=false;const next=arr[0],lineId=String(next.lineId||'').toLowerCase();$('trainModel').style.setProperty('--train-line',lineColor(lineId));$('train3dMinutes').textContent=arrivalMinutes(next.timeToStation||0);$('train3dDestination').textContent=(next.destinationName||next.towards||'Destino não informado')+' · '+(st.name||st.commonName||'Estação');$('train3dLine').textContent=next.lineName||next.lineId||'Linha não informada';$('train3dPlatform').textContent=next.platformName||'Plataforma não informada';root.textContent='Atualizado '+new Date().toLocaleTimeString()+' · '+arr.length+' previsões recebidas.';if(opsTrainTimer)clearInterval(opsTrainTimer);opsTrainTimer=setInterval(()=>refreshOpsTrain(),25000);}catch(e){root.textContent='Previsões indisponíveis no momento.';}}
+async function refreshOpsTrain(){if(!opsSelectedStation)return;try{const arr=await api('/StopPoint/'+encodeURIComponent(opsSelectedStation.id)+'/Arrivals');arr.sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0));if(arr.length){const a=arr[0];$('train3dMinutes').textContent=arrivalMinutes(a.timeToStation||0);$('train3dDestination').textContent=(a.destinationName||a.towards||'Destino não informado')+' · '+(opsSelectedStation.name||opsSelectedStation.commonName||'');$('train3dLine').textContent=a.lineName||a.lineId||'Linha não informada';$('train3dPlatform').textContent=a.platformName||'Plataforma não informada';$('trainModel').style.setProperty('--train-line',lineColor(String(a.lineId||'').toLowerCase()));$('train3dMeta').textContent='Atualizado '+new Date().toLocaleTimeString()+' · dados TfL';}}catch(e){}}
+async function compareOpsRoutes(){const from=$('compareFrom').value.trim(),to=$('compareTo').value.trim(),root=$('compareResults');if(!from||!to){root.textContent='Informe origem e destino.';return;}root.textContent='Calculando alternativas pela TfL…';try{const url='/Journey/JourneyResults/'+encodeURIComponent(from)+'/to/'+encodeURIComponent(to);const data=await api(url);root.innerHTML='';const journeys=(data.journeys||[]).slice(0,5);if(!journeys.length){root.textContent='A TfL não retornou alternativas para esse trajeto.';return;}journeys.forEach((j,i)=>{const box=document.createElement('div');box.className='ops-item';const title=document.createElement('strong');title.textContent='Alternativa '+(i+1)+' · '+(j.duration??'?')+' min';const legs=(j.legs||[]).map(l=>{const opt=(l.routeOptions||[])[0]||{};return (opt.name||l.mode?.name||'Trecho')+' ('+(l.duration??'?')+' min)'});const detail=document.createElement('small');detail.textContent=legs.join(' → ')||'Detalhes não fornecidos';box.append(title,detail);root.append(box)});}catch(e){root.textContent='Não foi possível comparar rotas. Confira os nomes das estações.';}}
+
+routeFromHash();
+
+let announcerStation=null, announcerPlatformId=null, announcerArrivals=[], announcerTick=null, announcerSync=null, announcerPlatformSources={};
+let announcerWakeLock=null, announcerLastMinute=null, announcerLastArrivalKey=null, announcerRunning=false;
+let announcerSearchToken=0;
+function renderAnnouncerSearchResults(items,message){
+ const root=$('announcerSearchResults');root.innerHTML='';
+ if(!items.length){root.textContent=message||'Nenhuma estação encontrada.';return;}
+ items.slice(0,20).forEach(st=>{const b=document.createElement('button');b.className='announcer-result';
+  const name=document.createElement('strong');name.textContent=st.commonName||st.name||st.id;
+  const meta=document.createElement('small');meta.textContent=(st.modes||[]).join(' · ')+' '+(st.id?'· '+st.id:'');b.append(name,meta);
+  b.onclick=()=>chooseAnnouncerStation(st);root.append(b);
+ });
+}
+async function searchAnnouncerStations(){
+ const q=$('announcerSearch').value.trim();if(q.length<2){$('announcerSearchResults').textContent='Digite pelo menos 2 letras.';return;}
+ const token=++announcerSearchToken;$('announcerSearchResults').textContent='Pesquisando estações na TfL...';
+ try{
+  const data=await api('/StopPoint/Search?query='+encodeURIComponent(q)+'&modes=tube');
+  if(token!==announcerSearchToken)return;
+  const list=(data.matches||[]).filter(x=>x.id&&(!x.modes||x.modes.includes('tube')));
+  renderAnnouncerSearchResults(list,'Nenhuma estação de metrô encontrada. Tente outro nome.');
+ }catch(e){if(token===announcerSearchToken)$('announcerSearchResults').textContent='Não foi possível pesquisar agora. Verifique a conexão e tente novamente.';}
+}
+$('announcerSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter')searchAnnouncerStations();});
+async function chooseAnnouncerStation(st){
+ stopAnnouncer();announcerStation=st;announcerPlatformId=null;
+ $('announcerSelectedStation').classList.remove('hidden');$('announcerSelectedStation').textContent='Estação selecionada: '+(st.commonName||st.name);
+ const sel=$('announcerPlatform');sel.disabled=true;sel.innerHTML='<option value="">Carregando plataformas...</option>';$('announcerLoadBtn').disabled=true;$('announcerStartBtn').disabled=true;
+ $('announcerHero').innerHTML='<div class="announcer-status">ESTAÇÃO SELECIONADA</div><div class="announcer-count">— <small>min</small></div><div class="announcer-status">Carregando plataformas e serviços...</div>';
+ try{
+  const [detail,arr]=await Promise.all([api('/StopPoint/'+encodeURIComponent(st.id)),api('/StopPoint/'+encodeURIComponent(st.id)+'/Arrivals').catch(()=>[])]);
+  // A TfL pode devolver o mesmo ponto várias vezes com nomes ligeiramente diferentes
+  // (ex.: "Southfields station" e "Southfields underground station"). Agrupamos
+  // pelo nome normalizado e consultamos todos os IDs do grupo, sem perder partidas.
+  announcerPlatformSources={};
+  const children=(detail.children||[]).filter(x=>x.id);
+  const normalizePlatformName=name=>String(name||'').toLowerCase()
+    .replace(/\bunderground\b/g,'').replace(/\bstation\b/g,'')
+    .replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+  const grouped=new Map();
+  children.forEach(x=>{
+   const name=x.commonName||x.name||x.id, key=normalizePlatformName(name)||String(x.id);
+   if(!grouped.has(key))grouped.set(key,{ids:[],name:name.replace(/\s+/g,' ').trim()});
+   const g=grouped.get(key);if(!g.ids.includes(x.id))g.ids.push(x.id);
+  });
+  let options=[...grouped.entries()].map(([key,g],i)=>({id:'group:'+i,name:g.name,ids:g.ids}));
+  if(!options.length){
+   const arrivalGroups=new Map();
+   (arr||[]).forEach(a=>{const name=a.platformName||'';if(!name)return;const key=normalizePlatformName(name)||name;if(!arrivalGroups.has(key))arrivalGroups.set(key,name);});
+   options=[...arrivalGroups.entries()].map(([key,name],i)=>({id:'parent:'+st.id+':'+i,name,ids:[st.id],parentFilter:name}));
+  }
+  if(!options.length)options=[{id:'group:0',name:'Plataforma / partidas da estação (TfL)',ids:[st.id]}];
+  options.forEach(o=>{announcerPlatformSources[o.id]=o;});
+  sel.innerHTML='';options.forEach(o=>{const op=document.createElement('option');op.value=o.id;op.textContent=o.name;sel.append(op);});
+  sel.disabled=false;$('announcerLoadBtn').disabled=false;
+  $('announcerSelectedStation').textContent=(st.commonName||st.name)+' · '+options.length+' opção(ões) de plataforma/partida';
+  loadAnnouncerPlatform();
+ }catch(e){sel.innerHTML='<option value="">Falha ao carregar plataformas</option>';sel.disabled=true;$('announcerSelectedStation').textContent='Não foi possível carregar detalhes desta estação.';}
+}
+function selectedAnnouncerPlatform(){const sel=$('announcerPlatform');return sel.options[sel.selectedIndex]||null;}
+async function loadAnnouncerPlatform(){
+ if(!announcerStation)return;stopAnnouncer();const opt=selectedAnnouncerPlatform();if(!opt)return;
+ announcerPlatformId=opt.value;$('announcerHero').innerHTML='<div class="announcer-status">CONSULTANDO PARTIDAS</div><div class="announcer-count">…</div><div class="announcer-status">Obtendo previsões de chegada da TfL.</div>';
+ try{
+  const source=announcerPlatformSources[announcerPlatformId]||{ids:[announcerStation.id]};
+  const batches=await Promise.all((source.ids||[announcerStation.id]).map(id=>api('/StopPoint/'+encodeURIComponent(id)+'/Arrivals').catch(()=>[])));
+  let arr=batches.flat();
+  if(source.parentFilter)arr=arr.filter(a=>normalizeTfLPlatformLabel(a.platformName)===normalizeTfLPlatformLabel(source.parentFilter));
+  const seen=new Set();arr=arr.filter(a=>{const k=a.id||[a.lineId,a.destinationName,a.expectedArrival,a.platformName].join('|');if(seen.has(k))return false;seen.add(k);return true;});
+  announcerArrivals=arr.sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0));
+  if(!announcerArrivals.length){$('announcerHero').innerHTML='<div class="announcer-status">SEM PREVISÕES DISPONÍVEIS</div><div class="announcer-count">—</div><div class="announcer-status">A TfL não forneceu partidas para esta plataforma neste momento. Tente outra plataforma.</div>';$('announcerStartBtn').disabled=true;return;}
+  announcerLastArrivalKey=null;announcerLastMinute=null;
+  $('announcerStartBtn').disabled=false;renderAnnouncerCountdown();
+ }catch(e){$('announcerHero').innerHTML='<div class="announcer-status">ERRO AO CONSULTAR A TfL</div><div class="announcer-count">—</div><div class="announcer-status">Tente carregar as partidas novamente.</div>';}
+}
+function activeAnnouncerArrival(){return announcerArrivals.filter(a=>(a.timeToStation||0)>=0).sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0))[0]||null;}
+function renderAnnouncerCountdown(){
+ const a=activeAnnouncerArrival();if(!a){$('announcerHero').innerHTML='<div class="announcer-status">AGUARDANDO PRÓXIMA PREVISÃO</div><div class="announcer-count">—</div><div class="announcer-status">Atualize as partidas para consultar novamente.</div>';return;}
+ const seconds=Math.max(0,Math.ceil((new Date(a.expectedArrival||Date.now()).getTime()-Date.now())/1000));
+ const mins=Math.ceil(seconds/60);const line=a.lineName||a.modeName||'Linha não informada';const dest=a.destinationName||a.towards||'Destino não informado';
+ $('announcerHero').innerHTML='<div class="announcer-status">PRÓXIMO TREM · '+escapeHtml(line.toUpperCase())+'</div><div class="announcer-count">'+(seconds<=25?'CHEGANDO':mins+' <small>minutos</small>')+'</div><div class="announcer-status">'+escapeHtml(dest)+' · '+escapeHtml(a.platformName||selectedAnnouncerPlatform()?.textContent||'Plataforma')+'</div><div class="announcer-status">'+(seconds<=60?'Aproxime-se da plataforma e tenha cuidado com o vão.':'Previsão TfL · contador atualizado a cada segundo')+'</div>';
+ if(announcerRunning){
+  const key=String(a.id||a.vehicleId||a.expectedArrival||dest);
+  if(key!==announcerLastArrivalKey){announcerLastArrivalKey=key;announcerLastMinute=null;}
+  if(mins<=5&&mins>1&&mins!==announcerLastMinute){announcerLastMinute=mins;speakAnnouncer('Seu trem está chegando em: '+mins+' minutos.');}
+  if(mins===1&&announcerLastMinute!==1){announcerLastMinute=1;speakAnnouncer('Aproxime-se da plataforma e tenha cuidado com o vão.');}
+ }
+}
+function speakAnnouncer(message){
+ try{const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){const ctx=new Ctx();[0,.18].forEach(t=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=880;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(.0001,ctx.currentTime+t);g.gain.exponentialRampToValueAtTime(.12,ctx.currentTime+t+.025);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+t+.12);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+.13);});}}
+ catch(e){}
+ if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message);u.lang='pt-BR';u.rate=.94;u.pitch=1;window.speechSynthesis.speak(u);}
+}
+function testAnnouncerSound(){speakAnnouncer('Pim. Pim. Seu trem está chegando. Aproxime-se da plataforma e tenha cuidado com o vão.');}
+async function acquireAnnouncerWakeLock(){
+ if(!('wakeLock'in navigator)){$('announcerInfo').textContent='Este navegador não oferece Wake Lock. Mantenha o site aberto e ajuste o bloqueio automático do celular.';return;}
+ try{announcerWakeLock=await navigator.wakeLock.request('screen');announcerWakeLock.addEventListener('release',()=>{announcerWakeLock=null;});$('announcerInfo').textContent='Tela ativa enquanto o navegador permitir. Se sair do site ou bloquear o celular, o sistema pode suspender os avisos.';}catch(e){$('announcerInfo').textContent='Não foi possível manter a tela ativa. Mantenha o site em primeiro plano.';}
+}
+function normalizeTfLPlatformLabel(name){return String(name||'').toLowerCase().replace(/\bunderground\b/g,'').replace(/\bstation\b/g,'').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');}
+async function syncAnnouncerArrivals(){if(!announcerRunning||!announcerStation||!announcerPlatformId)return;try{const source=announcerPlatformSources[announcerPlatformId]||{ids:[announcerStation.id]};const batches=await Promise.all((source.ids||[announcerStation.id]).map(id=>api('/StopPoint/'+encodeURIComponent(id)+'/Arrivals').catch(()=>[])));let arr=batches.flat();if(source.parentFilter)arr=arr.filter(a=>normalizeTfLPlatformLabel(a.platformName)===normalizeTfLPlatformLabel(source.parentFilter));const seen=new Set();arr=arr.filter(a=>{const k=a.id||[a.lineId,a.destinationName,a.expectedArrival,a.platformName].join('|');if(seen.has(k))return false;seen.add(k);return true;});announcerArrivals=arr.sort((a,b)=>(a.timeToStation||0)-(b.timeToStation||0));}catch(e){}renderAnnouncerCountdown();}
+async function startAnnouncer(){if(!announcerArrivals.length)return;announcerRunning=true;announcerLastMinute=null;await acquireAnnouncerWakeLock();renderAnnouncerCountdown();if(announcerTick)clearInterval(announcerTick);if(announcerSync)clearInterval(announcerSync);announcerTick=setInterval(renderAnnouncerCountdown,1000);announcerSync=setInterval(syncAnnouncerArrivals,25000);$('announcerStartBtn').textContent='▶ Avisos ativos';speakAnnouncer('Avisos de plataforma ativados.');}
+function stopAnnouncer(){announcerRunning=false;if(announcerTick){clearInterval(announcerTick);announcerTick=null;}if(announcerSync){clearInterval(announcerSync);announcerSync=null;}if(announcerWakeLock){announcerWakeLock.release().catch(()=>{});announcerWakeLock=null;}if('speechSynthesis'in window)window.speechSynthesis.cancel();const b=$('announcerStartBtn');if(b)b.textContent='▶ Iniciar avisos';}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&announcerRunning)acquireAnnouncerWakeLock();});
+
+// Start map only when the user opens the nearby section; geolocation is never requested automatically.
+
+setInterval(()=>{const el=$('signalClock');if(el&&updatedAt){const age=Math.floor((Date.now()-updatedAt.getTime())/60000);if(age>0)el.textContent='Última consulta há '+age+' min';}},30000);
+loadNetwork();
+</script>
+</body>
+</html>
